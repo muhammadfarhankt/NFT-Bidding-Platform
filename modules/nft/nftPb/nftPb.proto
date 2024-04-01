@@ -1,0 +1,27 @@
+// Version
+syntax = "proto3";
+
+// Package name
+option go_package = "github.com/muhammadfarhankt/NFT-Bidding-Platform";
+
+// Structures
+message FindNftsInIdsReq {
+    repeated int32 ids = 1;
+}
+
+message FindNftsInIdsRes {
+    repeated Nft nfts = 1;
+}
+
+message Nft {
+    string id = 1;
+    string title = 2;
+    double price = 3;
+    string imageUrl = 4;
+    int32 damage = 5;
+}
+
+// Methods
+service NftGrpcService {
+    rpc FindNftsInIds(FindNftsInIdsReq) returns (FindNftsInIdsRes);
+}
