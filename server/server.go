@@ -83,10 +83,15 @@ func Start(pctx context.Context, cfg *config.Config, db *mongo.Client) {
 
 	switch s.cfg.App.Name {
 	case "auth":
+		s.authService()
 	case "user":
+		s.userService()
 	case "nft":
+		s.nftService()
 	case "inventory":
+		s.inventoryService()
 	case "payment":
+		s.paymentService()
 	}
 
 	// Graceful Shutdown

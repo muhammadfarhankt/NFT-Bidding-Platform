@@ -3,7 +3,7 @@ package nft
 import "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/models"
 
 type (
-	CreateItemReq struct {
+	CreateNftReq struct {
 		Title       string  `json:"title" validate:"required,max=64"`
 		Price       float64 `json:"price" validate:"required"`
 		ImageUrl    string  `json:"image_url" validate:"required,max=255"`
@@ -14,8 +14,8 @@ type (
 		ListingType string  `json:"listing_type" validate:"required"`
 	}
 
-	ItemShowCase struct {
-		ItemId      string  `json:"item_id"`
+	NftShowCase struct {
+		NftId       string  `json:"nft_id"`
 		Title       string  `json:"title"`
 		Price       float64 `json:"price"`
 		ImageUrl    string  `json:"image_url"`
@@ -26,12 +26,12 @@ type (
 		ListingType string  `json:"listing_type"`
 	}
 
-	ItemSearchReq struct {
+	NftSearchReq struct {
 		Title string `json:"title"`
 		models.PaginateReq
 	}
 
-	ItemUpdateReq struct {
+	NftUpdateReq struct {
 		Title       string  `json:"title" validate:"required,max=64"`
 		Price       float64 `json:"price" validate:"required"`
 		ImageUrl    string  `json:"image_url" validate:"required,max=255"`
@@ -40,7 +40,7 @@ type (
 		ListingType string  `json:"listing_type" validate:"required"`
 	}
 
-	EnableOrDisableItemReq struct {
+	EnableOrDisableNftReq struct {
 		UsageStatus bool `json:"usage_status"`
 	}
 )
