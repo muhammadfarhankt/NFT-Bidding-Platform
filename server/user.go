@@ -27,7 +27,7 @@ func (s *server) userService() {
 		grpcServer.Serve(lis)
 	}()
 
-	_ = httpHandler
+	// _ = httpHandler
 	_ = grpcHandler
 	_ = queueHandler
 
@@ -35,4 +35,8 @@ func (s *server) userService() {
 
 	// Health Check
 	user.GET("", s.healthCheckService)
+	user.POST("/user/register", httpHandler.InsertUser)
+	user.GET("/user/:user_id", httpHandler.FindOneUserProfile)
+	user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)
+	user.GET("/user/wallet/:user_id", httpHandler.GetUserWalletAccount)
 }

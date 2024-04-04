@@ -21,7 +21,7 @@ func NewUserGrpcHandler(userUsecase userUsecase.UserUsecaseService) *userGrpcHan
 }
 
 func (g *userGrpcHandler) CredentialSearch(ctx context.Context, req *userPb.CredentialSearchReq) (*userPb.UserProfile, error) {
-	return nil, nil
+	return g.userUsecase.FindOneEmail(ctx, req.Password, req.Email)
 }
 
 func (g *userGrpcHandler) FindOneUserProfileToRefresh(ctx context.Context, req *userPb.FindOneUserProfileToRefreshReq) (*userPb.UserProfile, error) {

@@ -12,6 +12,7 @@ type (
 		OwnerId     string  `json:"owner_id" validate:"required"`
 		Category    string  `json:"category" validate:"required"`
 		ListingType string  `json:"listing_type" validate:"required"`
+		UsageStatus bool    `json:"usage_status"`
 	}
 
 	NftShowCase struct {
@@ -24,6 +25,7 @@ type (
 		OwnerId     string  `json:"owner_id"`
 		Category    string  `json:"category"`
 		ListingType string  `json:"listing_type"`
+		UsageStatus bool    `json:"usage_status"`
 	}
 
 	NftSearchReq struct {
@@ -38,6 +40,7 @@ type (
 		Description string  `json:"description" validate:"required,max=255"`
 		Category    string  `json:"category" validate:"required"`
 		ListingType string  `json:"listing_type" validate:"required"`
+		UsageStatus bool    `json:"usage_status"`
 	}
 
 	EnableOrDisableNftReq struct {

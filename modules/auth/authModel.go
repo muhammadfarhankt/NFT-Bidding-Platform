@@ -27,11 +27,12 @@ type (
 	}
 
 	CredentialRes struct {
-		Id          string    `json:"_id" bson:"_id,omitempty"`
-		UserId      string    `json:"user_id" bson:"user_id"`
-		RoleCode    int       `json:"role_code" bson:"role_code"`
-		AccessToken string    `json:"access_token" bson:"access_token"`
-		CreatedAt   time.Time `json:"created_at"`
-		UpdatedAt   time.Time `json:"updated_at"`
+		Id           string    `json:"_id"`
+		UserId       string    `json:"user_id"`
+		RoleCode     int       `json:"role_code"`
+		AccessToken  string    `json:"access_token"`
+		RefreshToken string    `json:"refresh_token"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
 	}
 )

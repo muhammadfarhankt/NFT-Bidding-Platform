@@ -14,7 +14,7 @@ type (
 		Username  string             `json:"username" bson:"username"`
 		CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 		UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
-		UserRole  []UserRole         `bson:"user_roles"`
+		UserRoles []UserRole         `bson:"user_roles"`
 	}
 
 	UserRole struct {
@@ -30,8 +30,15 @@ type (
 		UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 	}
 
-	UserSavingAccount struct {
+	UserWalletAccount struct {
 		UserId  string  `json:"user_id" bson:"user_id"`
 		Balance float64 `json:"balance" bson:"balance"`
+	}
+
+	UserTransaction struct {
+		Id        primitive.ObjectID `bson:"_id,omitempty"`
+		UserId    string             `bson:"user_id"`
+		Amount    float64            `bson:"amount"`
+		CreatedAt time.Time          `bson:"created_at"`
 	}
 )

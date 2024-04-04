@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	Item struct {
+	Nft struct {
 		Id          primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
 		Title       string             `json:"title" bson:"title"`
 		Price       float64            `json:"price" bson:"price"`
