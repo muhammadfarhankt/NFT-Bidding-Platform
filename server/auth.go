@@ -27,7 +27,7 @@ func (s *server) authService() {
 	}()
 
 	// _ = httpHandler
-	_ = grpcHandler
+	// _ = grpcHandler
 
 	auth := s.app.Group("/auth_v1")
 
@@ -35,4 +35,6 @@ func (s *server) authService() {
 	auth.POST("", s.healthCheckService)
 
 	auth.POST("/auth/login", httpHandler.Login)
+	auth.POST("/auth/refresh-token", httpHandler.RefreshToken)
+	auth.POST("/auth/logout", httpHandler.Logout)
 }

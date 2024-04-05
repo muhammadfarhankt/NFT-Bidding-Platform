@@ -3,6 +3,7 @@ package jwtAuth
 import (
 	"context"
 	"errors"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -143,10 +144,12 @@ func ParseToken(secret string, tokenString string) (*AuthMapClaims, error) {
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenMalformed) {
+			log.Println("error: jwt.ErrTokenMalformed : token format is invalid")
 			return nil, errors.New("error: token format is invalid")
 		} else if errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, errors.New("error: token is expired")
 		} else {
+			log.Println("error: token is invalid")
 			return nil, errors.New("error: token is invalid")
 		}
 	}

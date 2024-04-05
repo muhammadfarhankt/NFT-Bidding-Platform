@@ -26,6 +26,7 @@ func ContextWrapper(ctx echo.Context) contextWrapperService {
 }
 
 func (c *contextWrapper) Bind(data any) error {
+	log.Println("func Bind Data: ", data)
 	if err := c.Context.Bind(data); err != nil {
 		log.Printf("Error: Bind data failed: %s", err.Error())
 	}

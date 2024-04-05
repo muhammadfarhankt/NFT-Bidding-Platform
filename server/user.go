@@ -34,7 +34,8 @@ func (s *server) userService() {
 	user := s.app.Group("/user_v1")
 
 	// Health Check
-	user.GET("", s.healthCheckService)
+	// user.GET("", s.healthCheckService, s.middleware.JwtAuthorization)
+	user.POST("", s.healthCheckService)
 	user.POST("/user/register", httpHandler.InsertUser)
 	user.GET("/user/:user_id", httpHandler.FindOneUserProfile)
 	user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)

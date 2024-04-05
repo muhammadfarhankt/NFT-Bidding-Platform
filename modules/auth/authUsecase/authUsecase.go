@@ -2,6 +2,9 @@ package authUsecase
 
 import (
 	"context"
+	"errors"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/config"
@@ -11,12 +14,16 @@ import (
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/jwtAuth"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/utils"
 
+	authPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/auth/authPb"
 	userPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user/userPb"
 )
 
 type (
 	AuthUsecaseService interface {
 		Login(pctx context.Context, cfg *config.Config, req *auth.UserLoginReq) (*auth.ProfileIntercepter, error)
+		RefreshToken(pctx context.Context, cfg *config.Config, req *auth.RefreshTokenReq) (*auth.ProfileIntercepter, error)
+		Logout(pctx context.Context, credentialId string) (int64, error)
+		AccessTokenSearch(pctx context.Context, accessToken string) (*authPb.AccessTokenSearchRes, error)
 	}
 
 	authUsecase struct {
@@ -76,11 +83,94 @@ func (u *authUsecase) Login(pctx context.Context, cfg *config.Config, req *auth.
 		Credential: &auth.CredentialRes{
 			Id:           credential.Id.Hex(),
 			UserId:       credential.UserId,
-			RoleCode:     int(credential.RoleCode),
+			RoleCode:     credential.RoleCode,
 			AccessToken:  credential.AccessToken,
 			RefreshToken: credential.RefreshToken,
 			CreatedAt:    credential.CreatedAt.In(loc),
 			UpdatedAt:    credential.UpdatedAt.In(loc),
 		},
+	}, nil
+}
+
+func (u *authUsecase) RefreshToken(pctx context.Context, cfg *config.Config, req *auth.RefreshTokenReq) (*auth.ProfileIntercepter, error) {
+	claims, err := jwtAuth.ParseToken(cfg.Jwt.RefreshSecretKey, req.RefreshToken)
+	if err != nil {
+		log.Printf("Error: RefreshToken: %s", err.Error())
+		return nil, errors.New(err.Error())
+	}
+
+	profile, err := u.authRepository.FindOneUserProfileToRefresh(pctx, cfg.Grpc.UserUrl, &userPb.FindOneUserProfileToRefreshReq{
+		UserId: strings.TrimPrefix(claims.UserId, "user:"),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken := jwtAuth.NewAccessToken(cfg.Jwt.AccessSecretKey, cfg.Jwt.AccessDuration, &jwtAuth.Claims{
+		UserId:   profile.Id,
+		RoleCode: int(profile.RoleCode),
+	}).SignToken()
+
+	refreshToken := jwtAuth.ReloadToken(cfg.Jwt.RefreshSecretKey, claims.ExpiresAt.Unix(), &jwtAuth.Claims{
+		UserId:   profile.Id,
+		RoleCode: int(profile.RoleCode),
+	})
+
+	if err := u.authRepository.UpdateOneUserCredential(pctx, req.CredentialId, &auth.UpdateRefreshTokenReq{
+		UserId:       profile.Id,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		UpdatedAt:    utils.LocalTime(),
+	}); err != nil {
+		return nil, err
+	}
+
+	credential, err := u.authRepository.FindOneUserCredential(pctx, req.CredentialId)
+	if err != nil {
+		return nil, err
+	}
+
+	loc, _ := time.LoadLocation("Asia/Calcutta")
+
+	return &auth.ProfileIntercepter{
+		UserProfile: &user.UserProfile{
+			Id:        "user:" + profile.Id,
+			Email:     profile.Email,
+			Username:  profile.Username,
+			CreatedAt: utils.ConvertStringTimeToTime(profile.CreatedAt),
+			UpdatedAt: utils.ConvertStringTimeToTime(profile.UpdatedAt),
+		},
+		Credential: &auth.CredentialRes{
+			Id:           credential.Id.Hex(),
+			UserId:       credential.UserId,
+			RoleCode:     credential.RoleCode,
+			AccessToken:  credential.AccessToken,
+			RefreshToken: credential.RefreshToken,
+			CreatedAt:    credential.CreatedAt.In(loc),
+			UpdatedAt:    credential.UpdatedAt.In(loc),
+		},
+	}, nil
+}
+
+func (u *authUsecase) Logout(pctx context.Context, credentialId string) (int64, error) {
+	return u.authRepository.DeleteOneUserCredential(pctx, credentialId)
+}
+
+func (u *authUsecase) AccessTokenSearch(pctx context.Context, accessToken string) (*authPb.AccessTokenSearchRes, error) {
+	credential, err := u.authRepository.FindOneAccessToken(pctx, accessToken)
+	if err != nil {
+		return &authPb.AccessTokenSearchRes{
+			IsValid: false,
+		}, err
+	}
+
+	if credential == nil {
+		return &authPb.AccessTokenSearchRes{
+			IsValid: false,
+		}, errors.New("error: access token is invalid")
+	}
+
+	return &authPb.AccessTokenSearchRes{
+		IsValid: true,
 	}, nil
 }

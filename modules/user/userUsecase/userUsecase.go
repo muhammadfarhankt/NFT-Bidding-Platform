@@ -21,6 +21,7 @@ type (
 		AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq) (*user.UserWalletAccount, error)
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
 		FindOneEmail(pctx context.Context, password, email string) (*userPb.UserProfile, error)
+		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*userPb.UserProfile, error)
 	}
 
 	userUsecase struct {
@@ -121,6 +122,29 @@ func (u *userUsecase) FindOneEmail(pctx context.Context, password, email string)
 	roleCode := 0
 	for _, role := range result.UserRoles {
 		roleCode += role.RoleCode
+	}
+
+	loc, _ := time.LoadLocation("Asia/Calcutta")
+
+	return &userPb.UserProfile{
+		Id:        result.Id.Hex(),
+		Email:     result.Email,
+		Username:  result.Username,
+		RoleCode:  int32(roleCode),
+		CreatedAt: result.CreatedAt.In(loc).String(),
+		UpdatedAt: result.UpdatedAt.In(loc).String(),
+	}, nil
+}
+
+func (u *userUsecase) FindOneUserProfileToRefresh(pctx context.Context, userId string) (*userPb.UserProfile, error) {
+	result, err := u.userRepository.FindOneUserProfileToRefresh(pctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	roleCode := 0
+	for _, v := range result.UserRoles {
+		roleCode += v.RoleCode
 	}
 
 	loc, _ := time.LoadLocation("Asia/Calcutta")
