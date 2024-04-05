@@ -2,6 +2,7 @@ package nftHandler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -20,6 +21,7 @@ type (
 		FindOneNft(c echo.Context) error
 		FindManyNfts(c echo.Context) error
 		EditNft(c echo.Context) error
+		BlockOrUnblockNft(c echo.Context) error
 	}
 
 	nftHttpHandler struct {
@@ -105,4 +107,19 @@ func (h *nftHttpHandler) EditNft(c echo.Context) error {
 	}
 
 	return response.SuccessResponse(c, http.StatusOK, res)
+}
+
+func (h *nftHttpHandler) BlockOrUnblockNft(c echo.Context) error {
+	ctx := context.Background()
+
+	nftId := strings.TrimPrefix(c.Param("nft_id"), "nft:")
+
+	res, err := h.nftUsecase.BlockOrUnblockNft(ctx, nftId)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, map[string]any{
+		"message": fmt.Sprintf("nft_id: %s is successfully changed to: %v", nftId, res),
+	})
 }

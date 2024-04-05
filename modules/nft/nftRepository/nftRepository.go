@@ -22,6 +22,7 @@ type (
 		FindManyNfts(pctx context.Context, filter primitive.D, opts []*options.FindOptions) ([]*nft.NftShowCase, error)
 		CountNfts(pctx context.Context, filter primitive.D) (int64, error)
 		UpdateOneNft(pctx context.Context, nftId string, req primitive.M) error
+		BlockOrUnblockNft(pctx context.Context, nftId string, isActive bool) error
 	}
 
 	nftRepository struct {
@@ -151,6 +152,23 @@ func (r *nftRepository) UpdateOneNft(pctx context.Context, nftId string, req pri
 		return errors.New("error: update one nft failed")
 	}
 	log.Printf("UpdateOneNft result: %v", result.ModifiedCount)
+
+	return nil
+}
+
+func (r *nftRepository) BlockOrUnblockNft(pctx context.Context, nftId string, isActive bool) error {
+	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+	defer cancel()
+
+	db := r.nftDbConn(ctx)
+	col := db.Collection("nfts")
+
+	result, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(nftId)}, bson.M{"$set": bson.M{"usage_status": isActive}})
+	if err != nil {
+		log.Printf("Error: BlockOrUnblockNft failed: %s", err.Error())
+		return errors.New("error: BlockOrUnblockNft failed")
+	}
+	log.Printf("BlockOrUnblockNft result: %v", result.ModifiedCount)
 
 	return nil
 }

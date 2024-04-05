@@ -45,4 +45,7 @@ func (s *server) nftService() {
 
 	//Edit NFT
 	nft.PATCH("/nft/:nft_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.EditNft, []int{1, 0})))
+
+	//Block or Unblock NFT
+	nft.PATCH("/nft/:nft_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockNft, []int{1, 0})))
 }

@@ -23,6 +23,7 @@ type (
 		FindOneNft(pctx context.Context, nftId string) (*nft.NftShowCase, error)
 		FindManyNfts(pctx context.Context, basePaginateUrl string, req *nft.NftSearchReq) (*models.PaginateRes, error)
 		EditNft(pctx context.Context, nftId string, req *nft.NftUpdateReq) (*nft.NftShowCase, error)
+		BlockOrUnblockNft(pctx context.Context, nftId string) (bool, error)
 	}
 
 	nftUsecase struct {
@@ -177,4 +178,17 @@ func (u *nftUsecase) EditNft(pctx context.Context, nftId string, req *nft.NftUpd
 	}
 
 	return u.FindOneNft(pctx, nftId)
+}
+
+func (u *nftUsecase) BlockOrUnblockNft(pctx context.Context, nftId string) (bool, error) {
+	result, err := u.nftRepository.FindOneNft(pctx, nftId)
+	if err != nil {
+		return false, err
+	}
+
+	if err := u.nftRepository.BlockOrUnblockNft(pctx, nftId, !result.UsageStatus); err != nil {
+		return false, err
+	}
+
+	return !result.UsageStatus, nil
 }
