@@ -26,11 +26,23 @@ func (s *server) nftService() {
 		grpcServer.Serve(lis)
 	}()
 
-	_ = httpHandler
+	// _ = httpHandler
 	_ = grpcHandler
 
 	nft := s.app.Group("/nft_v1")
 
 	// Health Check
 	nft.GET("", s.healthCheckService)
+
+	// Create NFT
+	nft.POST("/nft", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.CreateNft, []int{1, 0})))
+
+	//Find one NFT
+	nft.GET("/nft/:nft_id", httpHandler.FindOneNft)
+
+	//Find many NFTs
+	nft.GET("/nft", httpHandler.FindManyNfts)
+
+	//Edit NFT
+	nft.PATCH("/nft/:nft_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.EditNft, []int{1, 0})))
 }

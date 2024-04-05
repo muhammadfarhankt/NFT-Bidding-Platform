@@ -29,7 +29,7 @@ type (
 	}
 
 	NftSearchReq struct {
-		Title string `json:"title"`
+		Title string `query:"title" validate:"max=64"`
 		models.PaginateReq
 	}
 
@@ -40,7 +40,6 @@ type (
 		Description string  `json:"description" validate:"required,max=255"`
 		Category    string  `json:"category" validate:"required"`
 		ListingType string  `json:"listing_type" validate:"required"`
-		UsageStatus bool    `json:"usage_status"`
 	}
 
 	EnableOrDisableNftReq struct {
