@@ -16,6 +16,7 @@ import (
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/middleware/middlewareHandler"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/middleware/middlewareRepository"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/middleware/middlewareUsecase"
+	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/jwtAuth"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -62,6 +63,8 @@ func Start(pctx context.Context, cfg *config.Config, db *mongo.Client) {
 		cfg:        cfg,
 		middleware: newMiddleware(cfg),
 	}
+
+	jwtAuth.SetApiKey(cfg.Jwt.ApiSecretKey)
 
 	// Basic Middleware
 	// Request Timeout

@@ -28,16 +28,22 @@ func (s *server) userService() {
 	}()
 
 	// _ = httpHandler
-	_ = grpcHandler
+	// _ = grpcHandler
 	_ = queueHandler
 
 	user := s.app.Group("/user_v1")
 
 	// Health Check
 	// user.GET("", s.healthCheckService, s.middleware.JwtAuthorization)
-	user.POST("", s.healthCheckService)
+	user.GET("", s.healthCheckService)
+
 	user.POST("/user/register", httpHandler.InsertUser)
+
 	user.GET("/user/:user_id", httpHandler.FindOneUserProfile)
-	user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)
-	user.GET("/user/wallet/:user_id", httpHandler.GetUserWalletAccount)
+
+	// user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)
+	user.POST("/user/add-wallet-money", httpHandler.AddToWallet, s.middleware.JwtAuthorization)
+
+	// user.GET("/user/wallet/:user_id", httpHandler.GetUserWalletAccount)
+	user.GET("/user/wallet", httpHandler.GetUserWalletAccount, s.middleware.JwtAuthorization)
 }

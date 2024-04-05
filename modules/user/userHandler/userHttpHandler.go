@@ -77,6 +77,7 @@ func (h *userHttpHandler) AddToWallet(c echo.Context) error {
 	wrapper := request.ContextWrapper(c)
 
 	req := new(user.CreateUserTransactionReq)
+	req.UserId = c.Get("user_id").(string)
 
 	if err := wrapper.Bind(req); err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
@@ -93,7 +94,8 @@ func (h *userHttpHandler) AddToWallet(c echo.Context) error {
 func (h *userHttpHandler) GetUserWalletAccount(c echo.Context) error {
 	ctx := context.Background()
 
-	userId := c.Param("user_id")
+	// userId := c.Param("user_id")
+	userId := c.Get("user_id").(string)
 
 	if userId == ":user_id" || userId == "" {
 		return response.ErrResponse(c, http.StatusBadRequest, "userId cannot be empty")
