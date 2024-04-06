@@ -21,4 +21,13 @@ type (
 		CreatedAt   time.Time          `json:"created_at" bson:"created_at"`
 		UpdatedAt   time.Time          `json:"updated_at" bson:"updated_at"`
 	}
+
+	NftCategory struct {
+		Id          primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
+		Title       string             `json:"title" bson:"title"`
+		Description string             `json:"description" bson:"description"`
+		UsageStatus bool               `json:"usage_status" bson:"usage_status"`
+		CreatedAt   time.Time          `json:"created_at" bson:"created_at"`
+		UpdatedAt   time.Time          `json:"updated_at" bson:"updated_at"`
+	}
 )

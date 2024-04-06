@@ -15,12 +15,13 @@ type (
 	}
 
 	FirstPaginate struct {
-		Href string `json:"href"`
+		Href  string `json:"href"`
+		Start string `json:"start"`
 	}
 
 	NextPaginate struct {
-		Start string `json:"start"`
 		Href  string `json:"href"`
+		Start string `json:"start"`
 	}
 
 	KafkaOffset struct {

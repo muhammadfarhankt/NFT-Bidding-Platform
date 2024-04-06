@@ -48,4 +48,19 @@ func (s *server) nftService() {
 
 	//Block or Unblock NFT
 	nft.PATCH("/nft/:nft_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockNft, []int{1, 0})))
+
+	//Create Category
+	nft.POST("/nft/category", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.CreateCategory, []int{1, 0})))
+
+	//Find one Category
+	nft.GET("/nft/category/:category_id", httpHandler.FindOneCategory)
+
+	//Find many Categories
+	nft.GET("/nft/category", httpHandler.FindManyCategories)
+
+	//Edit Category
+	nft.PATCH("/nft/category/:category_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.EditCategory, []int{1, 0})))
+
+	//Block or Unblock Category
+	nft.GET("/nft/category/:category_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockCategory, []int{1, 0})))
 }
