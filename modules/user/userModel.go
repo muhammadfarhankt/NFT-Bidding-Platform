@@ -9,6 +9,7 @@ type (
 		Username  string    `json:"username"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
+		IsBlocked bool      `json:"is_blocked"`
 	}
 
 	UserClaims struct {
@@ -24,6 +25,6 @@ type (
 
 	CreateUserTransactionReq struct {
 		UserId string  `json:"user_id" validate:"required,max=64"`
-		Amount   float64 `json:"amount" validate:"required"`
+		Amount float64 `json:"amount" validate:"required"`
 	}
 )

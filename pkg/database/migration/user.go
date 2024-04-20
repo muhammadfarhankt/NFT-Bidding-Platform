@@ -62,6 +62,7 @@ func UserMigrate(pctx context.Context, cfg *config.Config) {
 				},
 				CreatedAt: utils.LocalTime(),
 				UpdatedAt: utils.LocalTime(),
+				IsBlocked: false,
 			},
 			{
 				Email: "user002@nft.com",
@@ -81,6 +82,7 @@ func UserMigrate(pctx context.Context, cfg *config.Config) {
 				},
 				CreatedAt: utils.LocalTime(),
 				UpdatedAt: utils.LocalTime(),
+				IsBlocked: false,
 			},
 			{
 				Email: "user003@nft.com",
@@ -100,6 +102,7 @@ func UserMigrate(pctx context.Context, cfg *config.Config) {
 				},
 				CreatedAt: utils.LocalTime(),
 				UpdatedAt: utils.LocalTime(),
+				IsBlocked: false,
 			},
 			{
 				Email: "admin001@nft.com",
@@ -123,6 +126,7 @@ func UserMigrate(pctx context.Context, cfg *config.Config) {
 				},
 				CreatedAt: utils.LocalTime(),
 				UpdatedAt: utils.LocalTime(),
+				IsBlocked: false,
 			},
 		}
 

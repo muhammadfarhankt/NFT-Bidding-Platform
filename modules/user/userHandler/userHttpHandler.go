@@ -3,6 +3,7 @@ package userHandler
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -21,6 +22,7 @@ type (
 		FindOneUserProfile(c echo.Context) error
 		AddToWallet(c echo.Context) error
 		GetUserWalletAccount(c echo.Context) error
+		BlockOrUnblockUser(c echo.Context) error
 	}
 
 	userHttpHandler struct {
@@ -57,7 +59,7 @@ func (h *userHttpHandler) FindOneUserProfile(c echo.Context) error {
 
 	userId := strings.TrimPrefix(c.Param("user_id"), "user:")
 
-	fmt.Println("userId", userId)
+	//fmt.Println("userId", userId)
 
 	if userId == ":user_id" || userId == "" {
 		return response.ErrResponse(c, http.StatusBadRequest, "userId cannot be empty")
@@ -107,4 +109,27 @@ func (h *userHttpHandler) GetUserWalletAccount(c echo.Context) error {
 	}
 
 	return response.SuccessResponse(c, http.StatusBadRequest, res)
+}
+
+func (h *userHttpHandler) BlockOrUnblockUser(c echo.Context) error {
+	log.Println("BlockOrUnblockUser http handler")
+
+	ctx := context.Background()
+
+	// userId := c.Get("user_id").(string)
+
+	userId := c.Param("user_id")
+	log.Println("userId", userId)
+
+	res, err := h.userUsecase.BlockOrUnblockUser(ctx, userId)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	user, _ := h.userUsecase.FindOneUserProfile(ctx, userId)
+
+	return response.SuccessResponse(c, http.StatusOK, map[string]any{
+		"message": fmt.Sprintf("nft_id: %s is successfully changed to: %v", userId, res),
+		"user":    user,
+	})
 }

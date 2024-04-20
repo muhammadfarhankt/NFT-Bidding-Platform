@@ -64,7 +64,7 @@ func (u *middlewareUsecase) RbacAuthorization(c echo.Context, cfg *config.Config
 		}
 	}
 
-	return nil, errors.New("error: permission denied")
+	return nil, errors.New("error: permission denied. Admins Can only access this route")
 }
 
 func (u *middlewareUsecase) UserIdParamValidation(c echo.Context) (echo.Context, error) {

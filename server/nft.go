@@ -49,6 +49,10 @@ func (s *server) nftService() {
 	//Block or Unblock NFT
 	nft.PATCH("/nft/:nft_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockNft, []int{1, 0})))
 
+	//Delete NFT
+	nft.DELETE("/nft/:nft_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.DeleteNft, []int{1, 0})))
+
+	// -------------------------------- Categories -------------------------------- //
 	//Create Category
 	nft.POST("/nft/category", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.CreateCategory, []int{1, 0})))
 
@@ -63,4 +67,7 @@ func (s *server) nftService() {
 
 	//Block or Unblock Category
 	nft.GET("/nft/category/:category_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockCategory, []int{1, 0})))
+
+	//Delete Category
+	nft.DELETE("/nft/category/:category_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.DeleteCategory, []int{1, 0})))
 }

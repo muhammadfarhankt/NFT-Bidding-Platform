@@ -23,11 +23,15 @@ type (
 		CountNfts(pctx context.Context, filter primitive.D) (int64, error)
 		UpdateOneNft(pctx context.Context, nftId string, req primitive.M) error
 		BlockOrUnblockNft(pctx context.Context, nftId string, isActive bool) error
+		DeleteNft(pctx context.Context, nftId string) error
+
+		// ------------------- Category ------------------- //
 		InsertOneCategory(pctx context.Context, req *nft.NftCategory) (primitive.ObjectID, error)
 		FindOneCategory(pctx context.Context, categoryId string) (*nft.NftCategory, error)
 		FindManyCategories(pctx context.Context, filter primitive.D, opts []*options.FindOptions) ([]*nft.NftCategory, error)
 		UpdateOneCategory(pctx context.Context, categoryId string, req primitive.M) error
 		BlockOrUnblockCategory(pctx context.Context, categoryId string, isActive bool) error
+		DeleteCategory(pctx context.Context, categoryId string) error
 	}
 
 	nftRepository struct {
@@ -116,9 +120,9 @@ func (r *nftRepository) FindManyNfts(pctx context.Context, filter primitive.D, o
 			Title:       result.Title,
 			Price:       result.Price,
 			Description: result.Description,
-			AuthorId:    result.AuthorId,
-			OwnerId:     result.OwnerId,
-			Category:    result.Category,
+			AuthorId:    result.AuthorId.Hex(),
+			OwnerId:     result.OwnerId.Hex(),
+			Category:    result.Category.Hex(),
 			ListingType: result.ListingType,
 			UsageStatus: result.UsageStatus,
 			ImageUrl:    result.ImageUrl,
@@ -178,100 +182,19 @@ func (r *nftRepository) BlockOrUnblockNft(pctx context.Context, nftId string, is
 	return nil
 }
 
-func (r *nftRepository) InsertOneCategory(pctx context.Context, req *nft.NftCategory) (primitive.ObjectID, error) {
+func (r *nftRepository) DeleteNft(pctx context.Context, nftId string) error {
 	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
 	defer cancel()
 
 	db := r.nftDbConn(ctx)
-	col := db.Collection("categories")
+	col := db.Collection("nfts")
 
-	nftId, err := col.InsertOne(ctx, req)
+	result, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(nftId)}, bson.M{"$set": bson.M{"usage_status": false, "is_deleted": true}})
 	if err != nil {
-		log.Printf("Error: InsertOneCategory: %s", err.Error())
-		return primitive.NilObjectID, errors.New("error: insert one category failed")
+		log.Printf("Error: DeleteNft failed: %s", err.Error())
+		return errors.New("error: DeleteNft failed")
 	}
-
-	return nftId.InsertedID.(primitive.ObjectID), nil
-}
-
-func (r *nftRepository) FindOneCategory(pctx context.Context, categoryId string) (*nft.NftCategory, error) {
-	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
-	defer cancel()
-
-	db := r.nftDbConn(ctx)
-	col := db.Collection("categories")
-
-	result := new(nft.NftCategory)
-	if err := col.FindOne(ctx, bson.M{"_id": utils.ConvertToObjectId(categoryId)}).Decode(result); err != nil {
-		log.Printf("Error: FindOneCategory failed: %s", err.Error())
-		return nil, errors.New("error: category not found")
-	}
-
-	return result, nil
-}
-
-func (r *nftRepository) FindManyCategories(pctx context.Context, filter primitive.D, opts []*options.FindOptions) ([]*nft.NftCategory, error) {
-	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
-	defer cancel()
-
-	db := r.nftDbConn(ctx)
-	col := db.Collection("categories")
-
-	cursors, err := col.Find(ctx, filter, opts...)
-	if err != nil {
-		log.Printf("Error: FindManyCategories failed: %s", err.Error())
-		return make([]*nft.NftCategory, 0), errors.New("error: find many categories failed")
-	}
-
-	results := make([]*nft.NftCategory, 0)
-	for cursors.Next(ctx) {
-		result := new(nft.NftCategory)
-		if err := cursors.Decode(result); err != nil {
-			log.Printf("Error: FindManyCategories failed: %s", err.Error())
-			return make([]*nft.NftCategory, 0), errors.New("error: FindManyCategories failed")
-		}
-
-		results = append(results, &nft.NftCategory{
-			Id:          result.Id,
-			Title:       result.Title,
-			Description: result.Description,
-			UsageStatus: result.UsageStatus,
-		})
-	}
-
-	return results, nil
-}
-
-func (r *nftRepository) UpdateOneCategory(pctx context.Context, categoryId string, req primitive.M) error {
-	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
-	defer cancel()
-
-	db := r.nftDbConn(ctx)
-	col := db.Collection("categories")
-
-	result, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(categoryId)}, bson.M{"$set": req})
-	if err != nil {
-		log.Printf("Error: UpdateOneCategory failed: %s", err.Error())
-		return errors.New("error: update one category failed")
-	}
-	log.Printf("UpdateOneCategory result: %v", result.ModifiedCount)
-
-	return nil
-}
-
-func (r *nftRepository) BlockOrUnblockCategory(pctx context.Context, categoryId string, isActive bool) error {
-	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
-	defer cancel()
-
-	db := r.nftDbConn(ctx)
-	col := db.Collection("categories")
-
-	result, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(categoryId)}, bson.M{"$set": bson.M{"usage_status": isActive}})
-	if err != nil {
-		log.Printf("Error: BlockOrUnblockCategory failed: %s", err.Error())
-		return errors.New("error: BlockOrUnblockCategory failed")
-	}
-	log.Printf("BlockOrUnblockNft result: %v", result.ModifiedCount)
+	log.Printf("DeleteNft result: %v", result.ModifiedCount)
 
 	return nil
 }

@@ -15,6 +15,7 @@ type (
 		CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 		UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 		UserRoles []UserRole         `bson:"user_roles"`
+		IsBlocked bool               `json:"is_blocked" bson:"is_blocked"`
 	}
 
 	UserRole struct {
@@ -28,6 +29,7 @@ type (
 		Username  string             `json:"username" bson:"username"`
 		CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 		UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+		IsBlocked bool               `json:"is_blocked" bson:"is_blocked"`
 	}
 
 	UserWalletAccount struct {

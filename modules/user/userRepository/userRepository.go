@@ -23,6 +23,7 @@ type (
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
 		FindOneEmail(pctx context.Context, email string) (*user.User, error)
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*user.User, error)
+		BlockOrUnblockUser(pctx context.Context, userId string, isActive bool) error
 	}
 
 	userRepository struct {
@@ -102,6 +103,7 @@ func (r *userRepository) FindOneUserProfile(pctx context.Context, userId string)
 				"username":   1,
 				"created_at": 1,
 				"updated_at": 1,
+				"is_blocked": 1,
 			},
 		),
 	).Decode(result); err != nil {
@@ -209,3 +211,37 @@ func (r *userRepository) FindOneUserProfileToRefresh(pctx context.Context, userI
 
 	return result, nil
 }
+
+func (r *userRepository) BlockOrUnblockUser(pctx context.Context, userId string, isActive bool) error {
+	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("users")
+
+	result, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(userId)}, bson.M{"$set": bson.M{"is_blocked": isActive}})
+	if err != nil {
+		log.Printf("Error: BlockOrUnblockUser failed: %s", err.Error())
+		return errors.New("error: BlockOrUnblockUser failed")
+	}
+	log.Printf("BlockOrUnblockNft result: %v", result.ModifiedCount)
+
+	return nil
+}
+
+// func (r *userRepository) FindAllUsers(pctx context.Context) ([]*user.UserProfileBson, error) {
+// 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+// 	defer cancel()
+
+// 	db := r.userDbConn(ctx)
+// 	col := db.Collection("users")
+
+// 	result := new([]user.UserProfileBson)
+
+// 	if err := col.Find().Decode(result); err != nil {
+// 		log.Printf("Error: FindOneUserProfile: %s", err.Error())
+// 		return nil, errors.New("error: user profile not found")
+// 	}
+
+// 	return result, nil
+// }

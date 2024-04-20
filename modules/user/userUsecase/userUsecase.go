@@ -22,6 +22,7 @@ type (
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
 		FindOneEmail(pctx context.Context, password, email string) (*userPb.UserProfile, error)
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*userPb.UserProfile, error)
+		BlockOrUnblockUser(pctx context.Context, userId string) (bool, error)
 	}
 
 	userUsecase struct {
@@ -62,6 +63,7 @@ func (u *userUsecase) InsertUser(pctx context.Context, req *user.CreateUserReq) 
 				RoleCode:  0,
 			},
 		},
+		IsBlocked: false,
 	})
 
 	if err != nil {
@@ -86,6 +88,7 @@ func (u *userUsecase) FindOneUserProfile(pctx context.Context, userId string) (*
 		Username:  result.Username,
 		CreatedAt: result.CreatedAt.In(loc),
 		UpdatedAt: result.UpdatedAt.In(loc),
+		IsBlocked: result.IsBlocked,
 	}, nil
 }
 
@@ -158,3 +161,35 @@ func (u *userUsecase) FindOneUserProfileToRefresh(pctx context.Context, userId s
 		UpdatedAt: result.UpdatedAt.In(loc).String(),
 	}, nil
 }
+
+func (u *userUsecase) BlockOrUnblockUser(pctx context.Context, userId string) (bool, error) {
+	result, err := u.userRepository.FindOneUserProfile(pctx, userId)
+	if err != nil {
+		return false, err
+	}
+
+	if err := u.userRepository.BlockOrUnblockUser(pctx, userId, !result.IsBlocked); err != nil {
+		return false, err
+	}
+
+	return !result.IsBlocked, nil
+}
+
+// func (u *userUsecase) FindAllUsers(pctx context.Context) (*[]user.UserProfile, error) {
+
+// 	result, err := u.userRepository.FindOneUserProfile(pctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	loc, _ := time.LoadLocation("Asia/Calcutta")
+
+// 	return &[]user.UserProfile{
+// 		Id:        result.Id.Hex(),
+// 		Email:     result.Email,
+// 		Username:  result.Username,
+// 		RoleCode:  int32(roleCode),
+// 		CreatedAt: result.CreatedAt.In(loc).String(),
+// 		UpdatedAt: result.UpdatedAt.In(loc).String(),
+// 	}, nil
+// }
