@@ -83,12 +83,13 @@ func (u *userUsecase) FindOneUserProfile(pctx context.Context, userId string) (*
 	loc, _ := time.LoadLocation("Asia/Calcutta")
 
 	return &user.UserProfile{
-		Id:        result.Id.Hex(),
-		Email:     result.Email,
-		Username:  result.Username,
-		CreatedAt: result.CreatedAt.In(loc),
-		UpdatedAt: result.UpdatedAt.In(loc),
-		IsBlocked: result.IsBlocked,
+		Id:           result.Id.Hex(),
+		Email:        result.Email,
+		Username:     result.Username,
+		WalletAmount: result.WalletAmount,
+		CreatedAt:    result.CreatedAt.In(loc),
+		UpdatedAt:    result.UpdatedAt.In(loc),
+		IsBlocked:    result.IsBlocked,
 	}, nil
 }
 

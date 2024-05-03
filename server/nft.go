@@ -34,14 +34,17 @@ func (s *server) nftService() {
 	// Health Check
 	nft.GET("", s.healthCheckService)
 
-	// Create NFT
-	nft.POST("/nft", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.CreateNft, []int{1, 0})))
-
+	// -------------------------------- NFT Public End Points -------------------------------- //
 	//Find one NFT
 	nft.GET("/nft/:nft_id", httpHandler.FindOneNft)
 
 	//Find many NFTs
 	nft.GET("/nft", httpHandler.FindManyNfts)
+
+	// -------------------------------- NFT Admin End Points -------------------------------- //
+
+	// Create NFT
+	nft.POST("/nft", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.CreateNft, []int{1, 0})))
 
 	//Edit NFT
 	nft.PATCH("/nft/:nft_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.EditNft, []int{1, 0})))

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user"
@@ -98,12 +99,13 @@ func (r *userRepository) FindOneUserProfile(pctx context.Context, userId string)
 		bson.M{"_id": utils.ConvertToObjectId(userId)},
 		options.FindOne().SetProjection(
 			bson.M{
-				"_id":        1,
-				"email":      1,
-				"username":   1,
-				"created_at": 1,
-				"updated_at": 1,
-				"is_blocked": 1,
+				"_id":           1,
+				"email":         1,
+				"username":      1,
+				"created_at":    1,
+				"updated_at":    1,
+				"is_blocked":    1,
+				"wallet_amount": 1,
 			},
 		),
 	).Decode(result); err != nil {
@@ -120,13 +122,29 @@ func (r *userRepository) AddToWallet(pctx context.Context, req *user.UserTransac
 
 	db := r.userDbConn(ctx)
 	col := db.Collection("user_transactions")
+	colUser := db.Collection("users")
+	userId := req.UserId
+	userIdTrim := strings.TrimPrefix(userId, "user:")
 
 	result, err := col.InsertOne(ctx, req)
 	if err != nil {
 		log.Printf("Error: AddToWallet: %s", err.Error())
-		return errors.New("error: AddToWallet transcation failed")
+		return errors.New("error: AddToWallet transaction failed")
 	}
 	log.Printf("Result: AddToWallet: %v", result.InsertedID)
+
+	// Get user wallet account
+	userWallet, err := r.GetUserWalletAccount(ctx, userId)
+	// Update user wallet account in the database
+	_, err = colUser.UpdateOne(
+		ctx,
+		bson.M{"_id": utils.ConvertToObjectId(userIdTrim)},
+		bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance}},
+	)
+	if err != nil {
+		log.Printf("Error: AddToWallet: %s", err.Error())
+		return errors.New("error: failed to update user wallet account")
+	}
 
 	return nil
 }

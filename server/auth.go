@@ -40,4 +40,10 @@ func (s *server) authService() {
 	auth.POST("/auth/login", httpHandler.Login)
 	auth.POST("/auth/refresh-token", httpHandler.RefreshToken)
 	auth.POST("/auth/logout", httpHandler.Logout)
+
+	// otp request
+	auth.POST("/user/otp-request", httpHandler.OtpRequest)
+
+	// otp verification
+	auth.POST("/user/otp-verification", httpHandler.OtpVerification)
 }

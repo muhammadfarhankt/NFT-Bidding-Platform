@@ -25,6 +25,8 @@ type (
 		Logout(pctx context.Context, credentialId string) (int64, error)
 		AccessTokenSearch(pctx context.Context, accessToken string) (*authPb.AccessTokenSearchRes, error)
 		RolesCount(pctx context.Context) (*authPb.RolesCountRes, error)
+		OtpRequest(pctx context.Context, req *auth.OtpRequestReq) error
+		OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (*auth.ProfileIntercepter, error)
 	}
 
 	authUsecase struct {
@@ -185,4 +187,72 @@ func (u *authUsecase) RolesCount(pctx context.Context) (*authPb.RolesCountRes, e
 	return &authPb.RolesCountRes{
 		Count: result,
 	}, nil
+}
+
+func (u *authUsecase) OtpRequest(pctx context.Context, req *auth.OtpRequestReq) error {
+	otp := utils.GenerateOtp()
+
+	if err := u.authRepository.InsertOneOtp(pctx, req, otp); err != nil {
+		return err
+	}
+
+	if err := utils.SendOtpToEmail(req.Email, otp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *authUsecase) OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (*auth.ProfileIntercepter, error) {
+	//profile, err := u.authRepository.OtpVerification(pctx, req)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// accessToken := jwtAuth.NewAccessToken("", 0, &jwtAuth.Claims{
+	// 	UserId:   profile.Id,
+	// 	RoleCode: int(profile.RoleCode),
+	// }).SignToken()
+
+	// refreshToken := jwtAuth.NewRefreshToken("", 0, &jwtAuth.Claims{
+	// 	UserId:   profile.Id,
+	// 	RoleCode: int(profile.RoleCode),
+	// }).SignToken()
+
+	// credentialId, err := u.authRepository.InsertOneUserCredential(pctx, &auth.Credential{
+	// 	UserId:       profile.Id,
+	// 	RoleCode:     int(profile.RoleCode),
+	// 	AccessToken:  accessToken,
+	// 	RefreshToken: refreshToken,
+	// 	CreatedAt:    utils.LocalTime(),
+	// 	UpdatedAt:    utils.LocalTime(),
+	// })
+
+	// credential, err := u.authRepository.FindOneUserCredential(pctx, credentialId.Hex())
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// loc, _ := time.LoadLocation("Asia/Calcutta")
+
+	// return &auth.ProfileIntercepter{
+	// 	UserProfile: &user.UserProfile{
+	// 		Id:        profile.Id,
+	// 		Email:     profile.Email,
+	// 		Username:  profile.Username,
+	// 		CreatedAt: utils.ConvertStringTimeToTime(profile.CreatedAt).In(loc),
+	// 		UpdatedAt: utils.ConvertStringTimeToTime(profile.UpdatedAt).In(loc),
+	// 	},
+	// 	Credential: &auth.CredentialRes{
+	// 		Id:           credential.Id.Hex(),
+	// 		UserId:       credential.UserId,
+	// 		RoleCode:     credential.RoleCode,
+	// 		AccessToken:  credential.AccessToken,
+	// 		RefreshToken: credential.RefreshToken,
+	// 		CreatedAt:    credential.CreatedAt.In(loc),
+	// 		UpdatedAt:    credential.UpdatedAt.In(loc),
+	// 	},
+	// }, nil
+
+	return nil, nil
 }

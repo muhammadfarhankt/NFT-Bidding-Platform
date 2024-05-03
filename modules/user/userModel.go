@@ -4,12 +4,13 @@ import "time"
 
 type (
 	UserProfile struct {
-		Id        string    `json:"_id"`
-		Email     string    `json:"email"`
-		Username  string    `json:"username"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		IsBlocked bool      `json:"is_blocked"`
+		Id           string    `json:"_id"`
+		Email        string    `json:"email"`
+		Username     string    `json:"username"`
+		WalletAmount float64   `json:"wallet_amount"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		IsBlocked    bool      `json:"is_blocked"`
 	}
 
 	UserClaims struct {

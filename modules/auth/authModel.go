@@ -40,4 +40,13 @@ type (
 	LogoutReq struct {
 		CredentialId string `json:"credential_id" form:"credential_id" validate:"required,max=64"`
 	}
+
+	OtpRequestReq struct {
+		Email string `json:"email" form:"email" validate:"required,email,max=255"`
+	}
+
+	OtpVerificationReq struct {
+		Email string `json:"email" form:"email" validate:"required,email,max=255"`
+		Otp   string `json:"otp" form:"otp" validate:"required,max=6"`
+	}
 )

@@ -129,7 +129,7 @@ func (h *userHttpHandler) BlockOrUnblockUser(c echo.Context) error {
 	user, _ := h.userUsecase.FindOneUserProfile(ctx, userId)
 
 	return response.SuccessResponse(c, http.StatusOK, map[string]any{
-		"message": fmt.Sprintf("nft_id: %s is successfully changed to: %v", userId, res),
+		"message": fmt.Sprintf("user_id: %s is successfully changed to: %v", userId, res),
 		"user":    user,
 	})
 }

@@ -19,6 +19,8 @@ type (
 		Login(c echo.Context) error
 		RefreshToken(c echo.Context) error
 		Logout(c echo.Context) error
+		OtpRequest(c echo.Context) error
+		OtpVerification(c echo.Context) error
 	}
 
 	authHttpHandler struct {
@@ -89,4 +91,42 @@ func (h *authHttpHandler) Logout(c echo.Context) error {
 	return response.SuccessResponse(c, http.StatusOK, &response.MsgResponse{
 		Message: fmt.Sprintf("Logged Out Successfully : %d", res),
 	})
+}
+
+func (h *authHttpHandler) OtpRequest(c echo.Context) error {
+	ctx := context.Background()
+
+	wrapper := request.ContextWrapper(c)
+
+	req := new(auth.OtpRequestReq)
+
+	if err := wrapper.Bind(req); err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err := h.authUsecase.OtpRequest(ctx, req)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, "OTP Sent Successfully")
+}
+
+func (h *authHttpHandler) OtpVerification(c echo.Context) error {
+	ctx := context.Background()
+
+	wrapper := request.ContextWrapper(c)
+
+	req := new(auth.OtpVerificationReq)
+
+	if err := wrapper.Bind(req); err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	res, err := h.authUsecase.OtpVerification(ctx, req)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
 }

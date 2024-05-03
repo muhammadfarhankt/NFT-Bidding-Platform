@@ -37,6 +37,7 @@ func (s *server) userService() {
 	// user.GET("", s.healthCheckService, s.middleware.JwtAuthorization)
 	user.GET("", s.healthCheckService)
 
+	// ----------------- USER ----------------- //
 	user.POST("/user/register", httpHandler.InsertUser)
 
 	user.GET("/user/:user_id", httpHandler.FindOneUserProfile)
@@ -46,6 +47,8 @@ func (s *server) userService() {
 
 	// user.GET("/user/wallet/:user_id", httpHandler.GetUserWalletAccount)
 	user.GET("/user/wallet", httpHandler.GetUserWalletAccount, s.middleware.JwtAuthorization)
+
+	// ----------------- ADMIN ----------------- //
 
 	// block or unblock user
 	user.GET("/admin/:user_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockUser, []int{1, 0})))

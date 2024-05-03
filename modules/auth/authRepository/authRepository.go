@@ -27,6 +27,8 @@ type (
 		DeleteOneUserCredential(pctx context.Context, credentialId string) (int64, error)
 		FindOneAccessToken(pctx context.Context, accessToken string) (*auth.Credential, error)
 		RolesCount(pctx context.Context) (int64, error)
+		InsertOneOtp(pctx context.Context, req *auth.OtpRequestReq, otp string) error
+		//OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (*userPb.UserProfile, error)
 	}
 
 	authRepository struct {
@@ -190,3 +192,66 @@ func (r *authRepository) RolesCount(pctx context.Context) (int64, error) {
 
 	return count, nil
 }
+
+func (r *authRepository) InsertOneOtp(pctx context.Context, req *auth.OtpRequestReq, otp string) error {
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.authDbConn(ctx)
+	col := db.Collection("otp")
+
+	// Check if the email exists in the user database
+	userCol := db.Collection("users")
+	user := new(auth.UserLoginReq)
+	if err := userCol.FindOne(ctx, bson.M{"email": req.Email}).Decode(user); err != nil {
+		log.Printf("Error: InsertOneOtp failed: %s", err.Error())
+		return errors.New("error: email does not exist")
+	}
+
+	// Save the OTP in the "otp" collection
+	otpDoc := bson.M{
+		"email": req.Email,
+		"otp":   otp,
+	}
+	_, err := col.InsertOne(ctx, otpDoc)
+	if err != nil {
+		log.Printf("Error: InsertOneOtp failed: %s", err.Error())
+		return errors.New("error: failed to save OTP")
+	}
+
+	return nil
+}
+
+// func (r *authRepository) OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (*userPb.UserProfile, error) {
+// 	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+// 	defer cancel()
+
+// 	db := r.authDbConn(ctx)
+// 	col := db.Collection("otp")
+
+// 	otpDoc := new(auth.Otp)
+// 	if err := col.FindOne(ctx, bson.M{"email": req.Email, "otp": req.Otp}).Decode(otpDoc); err != nil {
+// 		log.Printf("Error: OtpVerification failed: %s", err.Error())
+// 		return nil, errors.New("error: invalid OTP")
+// 	}
+
+// 	// Delete the OTP from the "otp" collection
+// 	_, err := col.DeleteOne(ctx, bson.M{"email": req.Email})
+// 	if err != nil {
+// 		log.Printf("Error: OtpVerification failed: %s", err.Error())
+// 		return nil, errors.New("error: failed to delete OTP")
+// 	}
+
+// 	// Check if the email exists in the user database
+// 	userCol := db.Collection("users")
+// 	user := new(auth.User)
+// 	if err := userCol.FindOne(ctx, bson.M{"email": req.Email}).Decode(user); err != nil {
+// 		log.Printf("Error: OtpVerification failed: %s", err.Error())
+// 		return nil, errors.New("error: email does not exist")
+// 	}
+
+// 	// Generate a new access token
+// 	accessToken, err := jwtAuth.GenerateAccessToken(user.Id)
+
+// 	return userProfile, nil
+// }
