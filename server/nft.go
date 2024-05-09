@@ -46,6 +46,12 @@ func (s *server) nftService() {
 	// Create NFT
 	nft.POST("/nft", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.CreateNft, []int{1, 0})))
 
+	// Upload NFT Image
+	nft.POST("/image", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.UploadToGCP, []int{1, 0})))
+
+	// Delete NFT Image
+	nft.PATCH("/image", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.DeleteFromGCP, []int{1, 0})))
+
 	//Edit NFT
 	nft.PATCH("/nft/:nft_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.EditNft, []int{1, 0})))
 

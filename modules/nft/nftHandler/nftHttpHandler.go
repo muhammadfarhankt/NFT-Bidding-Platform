@@ -24,6 +24,10 @@ type (
 		BlockOrUnblockNft(c echo.Context) error
 		DeleteNft(c echo.Context) error
 
+		// -------------------- NFT Image -------------------- //
+		UploadToGCP(c echo.Context) error
+		DeleteFromGCP(c echo.Context) error
+
 		// -------------------- Category -------------------- //
 		CreateCategory(c echo.Context) error
 		FindOneCategory(c echo.Context) error
