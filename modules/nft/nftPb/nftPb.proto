@@ -6,7 +6,7 @@ option go_package = "github.com/muhammadfarhankt/NFT-Bidding-Platform";
 
 // Structures
 message FindNftsInIdsReq {
-    repeated int32 ids = 1;
+    repeated string ids = 1;
 }
 
 message FindNftsInIdsRes {

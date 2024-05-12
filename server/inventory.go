@@ -27,7 +27,7 @@ func (s *server) inventoryService() {
 		grpcServer.Serve(lis)
 	}()
 
-	_ = httpHandler
+	// _ = httpHandler
 	_ = grpcHandler
 	_ = queueHandler
 
@@ -35,4 +35,8 @@ func (s *server) inventoryService() {
 
 	// Health Check
 	inventory.GET("", s.healthCheckService)
+
+	// -------------------------------- Inventory Public End Points -------------------------------- //
+	// Find user nfts
+	inventory.GET("/inventory/:user_id", httpHandler.FindUserNfts, s.middleware.JwtAuthorization, s.middleware.UserIdParamValidation)
 }

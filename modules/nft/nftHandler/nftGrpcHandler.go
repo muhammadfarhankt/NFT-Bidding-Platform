@@ -21,5 +21,5 @@ func NewNftGrpcHandler(nftUsecase nftUsecase.NftUsecaseService) *nftGrpcHandler 
 }
 
 func (g *nftGrpcHandler) FindNftsInIds(ctx context.Context, req *nftPb.FindNftsInIdsReq) (*nftPb.FindNftsInIdsRes, error) {
-	return nil, nil
+	return g.nftUsecase.FindNftsInIds(ctx, req)
 }

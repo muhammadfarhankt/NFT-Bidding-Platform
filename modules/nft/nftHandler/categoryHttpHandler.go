@@ -97,8 +97,15 @@ func (h *nftHttpHandler) BlockOrUnblockCategory(c echo.Context) error {
 	req := new(nft.NftCategory)
 	category, _ := h.nftUsecase.EditCategory(ctx, categoryId, req)
 
+	if res {
+		return response.SuccessResponse(c, http.StatusOK, map[string]any{
+			"message":  fmt.Sprintf("CategoryId : %s is successfully unblocked.", categoryId),
+			"category": category,
+		})
+	}
+
 	return response.SuccessResponse(c, http.StatusOK, map[string]any{
-		"message":  fmt.Sprintf("CategoryId : %s is successfully changed to: %v", categoryId, res),
+		"message":  fmt.Sprintf("CategoryId : %s is successfully blocked.", categoryId),
 		"category": category,
 	})
 }
@@ -108,7 +115,15 @@ func (h *nftHttpHandler) DeleteCategory(c echo.Context) error {
 
 	categoryId := c.Param("category_id")
 
-	res, err := h.nftUsecase.DeleteCategory(ctx, categoryId)
+	result, err := h.nftUsecase.FindOneCategory(ctx, categoryId)
+	if result.IsDeleted {
+		return response.ErrResponse(c, http.StatusBadRequest, "Category is already soft deleted")
+	}
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	_, err = h.nftUsecase.DeleteCategory(ctx, categoryId)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -117,7 +132,7 @@ func (h *nftHttpHandler) DeleteCategory(c echo.Context) error {
 	category, _ := h.nftUsecase.EditCategory(ctx, categoryId, req)
 
 	return response.SuccessResponse(c, http.StatusOK, map[string]any{
-		"message":  fmt.Sprintf("CategoryId : %s is successfully soft deleted (Blocked): %v", categoryId, res),
+		"message":  fmt.Sprintf("CategoryId : %s is successfully soft deleted (Blocked).", categoryId),
 		"category": category,
 	})
 }

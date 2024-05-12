@@ -40,7 +40,7 @@ func (s *server) userService() {
 	// ----------------- USER ----------------- //
 	user.POST("/user/register", httpHandler.InsertUser)
 
-	user.GET("/user/:user_id", httpHandler.FindOneUserProfile)
+	user.GET("/user", httpHandler.FindOneUserProfile, s.middleware.JwtAuthorization)
 
 	// user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)
 	user.POST("/user/add-wallet-money", httpHandler.AddToWallet, s.middleware.JwtAuthorization)

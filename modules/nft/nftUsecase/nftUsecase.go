@@ -9,7 +9,6 @@ import (
 
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/models"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft"
-	files "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft"
 	nftPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft/nftPb"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft/nftRepository"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/utils"
@@ -21,26 +20,26 @@ import (
 
 type (
 	NftUsecaseService interface {
-		CreateNft(pctx context.Context, req *nft.CreateNftReq) (any, error)
+		CreateNft(pctx context.Context, req *nft.CreateNftReq, userId string) (any, error)
 		FindOneNft(pctx context.Context, nftId string) (*nft.NftShowCase, error)
 		FindManyNfts(pctx context.Context, basePaginateUrl string, req *nft.NftSearchReq) (*models.PaginateRes, error)
-		EditNft(pctx context.Context, nftId string, req *nft.NftUpdateReq) (*nft.NftShowCase, error)
-		BlockOrUnblockNft(pctx context.Context, nftId string) (bool, error)
-		DeleteNft(pctx context.Context, nftId string) (bool, error)
+		EditNft(pctx context.Context, nftId string, userId string, req *nft.NftUpdateReq) (*nft.NftShowCase, error)
+		BlockOrUnblockNft(pctx context.Context, nftId string, userId string) (bool, error)
+		DeleteNft(pctx context.Context, nftId string, userId string) (bool, error)
 
 		FindNftsInIds(pctx context.Context, req *nftPb.FindNftsInIdsReq) (*nftPb.FindNftsInIdsRes, error)
 
 		// -------------------- Category -------------------- //
 		CreateCategory(pctx context.Context, req *nft.NftCategoryReq) (any, error)
 		FindOneCategory(pctx context.Context, categoryId string) (*nft.NftCategory, error)
-		FindManyCategories(pctx context.Context, basePaginateUrl string, req *nft.NftSearchReq) (*models.PaginateRes, error)
+		FindManyCategories(pctx context.Context, basePaginateUrl string, req *nft.NftSearchReq) ([]*nft.NftCategory, error)
 		EditCategory(pctx context.Context, categoryId string, req *nft.NftCategory) (*nft.NftCategory, error)
 		BlockOrUnblockCategory(pctx context.Context, categoryId string) (bool, error)
 		DeleteCategory(pctx context.Context, categoryId string) (bool, error)
 
 		// -------------------- NFT Image -------------------- //
-		UploadToGCP(req []*files.FileReq) ([]*files.FileRes, error)
-		DeleteFileFromGCP(req []*files.DeleteFileReq) error
+		UploadToGCP(req []*nft.FileReq) ([]*nft.FileRes, error)
+		DeleteFileFromGCP(req []*nft.DeleteFileReq) error
 	}
 
 	nftUsecase struct {
@@ -52,30 +51,37 @@ func NewNftUsecase(nftRepository nftRepository.NftRepositoryService) NftUsecaseS
 	return &nftUsecase{nftRepository}
 }
 
-func (u *nftUsecase) CreateNft(pctx context.Context, req *nft.CreateNftReq) (any, error) {
+func (u *nftUsecase) CreateNft(pctx context.Context, req *nft.CreateNftReq, userId string) (any, error) {
 	if !u.nftRepository.IsUniqueNft(pctx, req.Title) {
 		return nil, errors.New("error: this title is already exist")
 	}
 
 	// req.AuthorId = strings.TrimPrefix(claims.UserId, "user:")
 	// req.OwnerId = strings.TrimPrefix(claims.UserId, "user:")
-	authorId, _ := primitive.ObjectIDFromHex(req.AuthorId)
-	ownerId, _ := primitive.ObjectIDFromHex(req.OwnerId)
+
+	// authorId, _ := primitive.ObjectIDFromHex(req.AuthorId)
+	// ownerId, _ := primitive.ObjectIDFromHex(req.OwnerId)
 	categoryId, _ := primitive.ObjectIDFromHex(req.Category)
 
+	category, err := u.nftRepository.FindOneCategory(pctx, req.Category)
+	if err != nil {
+		return nil, errors.New("error: category not found")
+	}
+
 	nftId, err := u.nftRepository.InsertOneNft(pctx, &nft.Nft{
-		Title:       req.Title,
-		Price:       req.Price,
-		UsageStatus: true,
-		IsDeleted:   false,
-		AuthorId:    authorId,
-		OwnerId:     ownerId,
-		Category:    categoryId,
-		ListingType: req.ListingType,
-		Description: req.Description,
-		ImageUrl:    req.ImageUrl,
-		CreatedAt:   utils.LocalTime(),
-		UpdatedAt:   utils.LocalTime(),
+		Title:             req.Title,
+		Price:             req.Price,
+		UsageStatus:       true,
+		IsDeleted:         false,
+		AuthorId:          utils.ConvertToObjectId(userId),
+		OwnerId:           utils.ConvertToObjectId(userId),
+		Category:          categoryId,
+		ListingType:       req.ListingType,
+		Description:       req.Description,
+		ImageUrl:          req.ImageUrl,
+		CreatedAt:         utils.LocalTime(),
+		UpdatedAt:         utils.LocalTime(),
+		IsCategoryBlocked: !category.UsageStatus || category.IsDeleted,
 	})
 	if err != nil {
 		return nil, err
@@ -122,12 +128,13 @@ func (u *nftUsecase) FindManyNfts(pctx context.Context, basePaginateUrl string, 
 	}
 
 	if req.Category != "" {
-		findNftsFilter = append(findNftsFilter, bson.E{"category", primitive.Regex{Pattern: req.Category, Options: "i"}})
-		countNftsFilter = append(countNftsFilter, bson.E{"category", primitive.Regex{Pattern: req.Category, Options: "i"}})
+		categoryId, _ := primitive.ObjectIDFromHex(req.Category)
+		findNftsFilter = append(findNftsFilter, bson.E{"category", categoryId})
+		countNftsFilter = append(countNftsFilter, bson.E{"category", categoryId})
 	}
 
-	findNftsFilter = append(findNftsFilter, bson.E{"usage_status", true})
-	countNftsFilter = append(countNftsFilter, bson.E{"usage_status", true})
+	findNftsFilter = append(findNftsFilter, bson.E{"usage_status", true}, bson.E{"is_deleted", false}, bson.E{"is_category_blocked", false})
+	countNftsFilter = append(countNftsFilter, bson.E{"usage_status", true}, bson.E{"is_deleted", false}, bson.E{"is_category_blocked", false})
 
 	// Options
 	findNftsOpts = append(findNftsOpts, options.Find().SetSort(bson.D{{"_id", 1}}))
@@ -174,8 +181,22 @@ func (u *nftUsecase) FindManyNfts(pctx context.Context, basePaginateUrl string, 
 	}, nil
 }
 
-func (u *nftUsecase) EditNft(pctx context.Context, nftId string, req *nft.NftUpdateReq) (*nft.NftShowCase, error) {
-	// Update logical
+func (u *nftUsecase) EditNft(pctx context.Context, nftId string, userId string, req *nft.NftUpdateReq) (*nft.NftShowCase, error) {
+
+	// check nft exist
+	result, err := u.nftRepository.FindOneNft(pctx, nftId)
+	if err != nil {
+		return nil, errors.New("error: nft not found")
+	}
+
+	fmt.Println("result owner id ", result.OwnerId.Hex())
+	fmt.Println("user id ", userId)
+	// check owner
+	if result.OwnerId.Hex() != userId {
+		return nil, errors.New("Unauthorized Error: you are not the owner of this nft")
+	}
+
+	// Update logic
 	updateReq := bson.M{}
 	if req.Title != "" {
 		if !u.nftRepository.IsUniqueNft(pctx, req.Title) {
@@ -209,10 +230,14 @@ func (u *nftUsecase) EditNft(pctx context.Context, nftId string, req *nft.NftUpd
 	return u.FindOneNft(pctx, nftId)
 }
 
-func (u *nftUsecase) BlockOrUnblockNft(pctx context.Context, nftId string) (bool, error) {
+func (u *nftUsecase) BlockOrUnblockNft(pctx context.Context, nftId string, userId string) (bool, error) {
 	result, err := u.nftRepository.FindOneNft(pctx, nftId)
 	if err != nil {
-		return false, err
+		return false, errors.New("error: nft not found")
+	}
+
+	if result.OwnerId.Hex() != userId {
+		return false, errors.New("Unauthorized error: you are not the owner of this nft")
 	}
 
 	if err := u.nftRepository.BlockOrUnblockNft(pctx, nftId, !result.UsageStatus); err != nil {
@@ -222,10 +247,19 @@ func (u *nftUsecase) BlockOrUnblockNft(pctx context.Context, nftId string) (bool
 	return !result.UsageStatus, nil
 }
 
-func (u *nftUsecase) DeleteNft(pctx context.Context, nftId string) (bool, error) {
-	_, err := u.nftRepository.FindOneNft(pctx, nftId)
+func (u *nftUsecase) DeleteNft(pctx context.Context, nftId string, userId string) (bool, error) {
+	result, err := u.nftRepository.FindOneNft(pctx, nftId)
+
 	if err != nil {
-		return false, err
+		return false, errors.New("error: nft not found")
+	}
+
+	if result.OwnerId.Hex() != userId {
+		return false, errors.New("unauthorized error: you are not the owner of this nft")
+	}
+
+	if result.IsDeleted {
+		return false, errors.New("error: nft is already soft deleted")
 	}
 
 	if err := u.nftRepository.DeleteNft(pctx, nftId); err != nil {
@@ -247,8 +281,8 @@ func (u *nftUsecase) FindNftsInIds(pctx context.Context, req *nftPb.FindNftsInId
 
 	filter = append(filter, bson.E{"_id", bson.D{{"$in", objectIds}}})
 	filter = append(filter, bson.E{"usage_status", true})
-	// filter = append(filter, bson.E{"is_deleted", false})
-	// filter = append(filter, bson.E{"is_category_blocked", false})
+	filter = append(filter, bson.E{"is_deleted", false})
+	filter = append(filter, bson.E{"is_category_blocked", false})
 
 	results, err := u.nftRepository.FindManyNfts(pctx, filter, nil)
 	if err != nil {

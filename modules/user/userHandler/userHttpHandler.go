@@ -57,7 +57,7 @@ func (h *userHttpHandler) InsertUser(c echo.Context) error {
 func (h *userHttpHandler) FindOneUserProfile(c echo.Context) error {
 	ctx := context.Background()
 
-	userId := strings.TrimPrefix(c.Param("user_id"), "user:")
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
 
 	//fmt.Println("userId", userId)
 

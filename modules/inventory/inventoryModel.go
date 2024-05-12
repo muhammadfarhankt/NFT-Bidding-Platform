@@ -13,11 +13,11 @@ type (
 
 	NftInInventory struct {
 		InventoryId string `json:"inventory_id"`
+		UserId      string `json:"user_id"`
 		*nft.NftShowCase
 	}
 
-	UserInventory struct {
-		UserId string `json:"user_id"`
-		*models.PaginateRes
+	InventorySearchReq struct {
+		models.PaginateReq
 	}
 )

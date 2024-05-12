@@ -16,6 +16,7 @@ import (
 
 type (
 	NftRepositoryService interface {
+		// ------------------- NFT ------------------- //
 		IsUniqueNft(pctx context.Context, title string) bool
 		InsertOneNft(pctx context.Context, req *nft.Nft) (primitive.ObjectID, error)
 		FindOneNft(pctx context.Context, nftId string) (*nft.Nft, error)

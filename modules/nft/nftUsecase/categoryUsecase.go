@@ -2,14 +2,12 @@ package nftUsecase
 
 import (
 	"context"
-	"strings"
+	"errors"
 
-	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/models"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -49,30 +47,15 @@ func (u *nftUsecase) FindOneCategory(pctx context.Context, categoryId string) (*
 	}, nil
 }
 
-func (u *nftUsecase) FindManyCategories(pctx context.Context, basePaginateUrl string, req *nft.NftSearchReq) (*models.PaginateRes, error) {
+func (u *nftUsecase) FindManyCategories(pctx context.Context, basePaginateUrl string, req *nft.NftSearchReq) ([]*nft.NftCategory, error) {
 	findNftsFilter := bson.D{}
 	findNftsOpts := make([]*options.FindOptions, 0)
 
-	countNftsFilter := bson.D{}
-
-	// Filter
-	if req.Start != "" {
-		req.Start = strings.TrimPrefix(req.Start, "nft:")
-		findNftsFilter = append(findNftsFilter, bson.E{"_id", bson.D{{"$gt", utils.ConvertToObjectId(req.Start)}}})
-	}
-
-	if req.Title != "" {
-		findNftsFilter = append(findNftsFilter, bson.E{"title", primitive.Regex{Pattern: req.Title, Options: "i"}})
-		countNftsFilter = append(countNftsFilter, bson.E{"title", primitive.Regex{Pattern: req.Title, Options: "i"}})
-	}
-
 	findNftsFilter = append(findNftsFilter, bson.E{"usage_status", true})
 	findNftsFilter = append(findNftsFilter, bson.E{"is_deleted", false})
-	countNftsFilter = append(countNftsFilter, bson.E{"usage_status", true})
 
 	// Options
 	findNftsOpts = append(findNftsOpts, options.Find().SetSort(bson.D{{"_id", 1}}))
-	findNftsOpts = append(findNftsOpts, options.Find().SetLimit(int64(req.Limit)))
 
 	// Find
 	results, err := u.nftRepository.FindManyCategories(pctx, findNftsFilter, findNftsOpts)
@@ -80,21 +63,11 @@ func (u *nftUsecase) FindManyCategories(pctx context.Context, basePaginateUrl st
 		return nil, err
 	}
 
-	// Count
-	// total, err := u.nftRepository.CountNfts(pctx, countNftsFilter)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	if len(results) == 0 {
-		return &models.PaginateRes{
-			Data: make([]*nft.NftCategory, 0),
-		}, nil
+		return make([]*nft.NftCategory, 0), errors.New("error: categories not found")
 	}
 
-	return &models.PaginateRes{
-		Data: results,
-	}, nil
+	return results, nil
 }
 
 func (u *nftUsecase) EditCategory(pctx context.Context, categoryId string, req *nft.NftCategory) (*nft.NftCategory, error) {
@@ -139,10 +112,11 @@ func (u *nftUsecase) BlockOrUnblockCategory(pctx context.Context, categoryId str
 }
 
 func (u *nftUsecase) DeleteCategory(pctx context.Context, categoryId string) (bool, error) {
-	_, err := u.nftRepository.FindOneCategory(pctx, categoryId)
-	if err != nil {
-		return false, err
-	}
+	// commenting below code because category check already done in handler
+	// _, err := u.nftRepository.FindOneCategory(pctx, categoryId)
+	// if err != nil {
+	// 	return false, err
+	// }
 
 	if err := u.nftRepository.DeleteCategory(pctx, categoryId); err != nil {
 		return false, err

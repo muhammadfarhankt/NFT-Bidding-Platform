@@ -57,11 +57,13 @@ func (h *nftHttpHandler) CreateNft(c echo.Context) error {
 
 	req := new(nft.CreateNftReq)
 
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
+
 	if err := wrapper.Bind(req); err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
 
-	res, err := h.nftUsecase.CreateNft(ctx, req)
+	res, err := h.nftUsecase.CreateNft(ctx, req, userId)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -89,6 +91,8 @@ func (h *nftHttpHandler) FindManyNfts(c echo.Context) error {
 
 	req := new(nft.NftSearchReq)
 
+	//fmt.Println("Findmany nfts req: ", req.Category, req.Title, req.Start, req.Limit)
+
 	if err := wrapper.Bind(req); err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -104,8 +108,8 @@ func (h *nftHttpHandler) FindManyNfts(c echo.Context) error {
 func (h *nftHttpHandler) EditNft(c echo.Context) error {
 	ctx := context.Background()
 
-	nftId := strings.TrimPrefix(c.Param("nft_id"), "nft:")
-
+	nftId := string(c.Param("nft_id"))
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
 	wrapper := request.ContextWrapper(c)
 
 	req := new(nft.NftUpdateReq)
@@ -114,7 +118,7 @@ func (h *nftHttpHandler) EditNft(c echo.Context) error {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
 
-	res, err := h.nftUsecase.EditNft(ctx, nftId, req)
+	res, err := h.nftUsecase.EditNft(ctx, nftId, userId, req)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -127,13 +131,21 @@ func (h *nftHttpHandler) BlockOrUnblockNft(c echo.Context) error {
 
 	nftId := strings.TrimPrefix(c.Param("nft_id"), "nft:")
 
-	res, err := h.nftUsecase.BlockOrUnblockNft(ctx, nftId)
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
+
+	res, err := h.nftUsecase.BlockOrUnblockNft(ctx, nftId, userId)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
 
+	if res {
+		return response.SuccessResponse(c, http.StatusOK, map[string]any{
+			"message": fmt.Sprintf("nft_id: %s is successfully blocked", nftId),
+		})
+	}
+
 	return response.SuccessResponse(c, http.StatusOK, map[string]any{
-		"message": fmt.Sprintf("nft_id: %s is successfully changed to: %v", nftId, res),
+		"message": fmt.Sprintf("nft_id: %s is successfully unblocked", nftId),
 	})
 }
 
@@ -142,7 +154,9 @@ func (h *nftHttpHandler) DeleteNft(c echo.Context) error {
 
 	nftId := strings.TrimPrefix(c.Param("nft_id"), "nft:")
 
-	_, err := h.nftUsecase.DeleteNft(ctx, nftId)
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
+
+	_, err := h.nftUsecase.DeleteNft(ctx, nftId, userId)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
