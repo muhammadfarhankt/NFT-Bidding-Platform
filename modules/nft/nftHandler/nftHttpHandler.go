@@ -35,6 +35,15 @@ type (
 		EditCategory(c echo.Context) error
 		BlockOrUnblockCategory(c echo.Context) error
 		DeleteCategory(c echo.Context) error
+
+		// -------------------- NFT Bidding Owner -------------------- //
+		CreateBid(c echo.Context) error
+		EditBid(c echo.Context) error
+		DeleteBid(c echo.Context) error
+
+		// -------------------- NFT Bidding User -------------------- //
+		BidNft(c echo.Context) error
+		WithdrawBid(c echo.Context) error
 	}
 
 	nftHttpHandler struct {

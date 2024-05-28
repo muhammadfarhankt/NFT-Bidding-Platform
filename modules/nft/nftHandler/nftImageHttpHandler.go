@@ -25,6 +25,9 @@ func RandFileName(ext string) string {
 func (f *nftHttpHandler) UploadToGCP(c echo.Context) error {
 	fmt.Println("uploadToGCP")
 	req := make([]*files.FileReq, 0)
+	if req == nil {
+		return response.ErrResponse(c, http.StatusBadRequest, "uploadToGCPErr : Image/ Images is required")
+	}
 	form, err := c.MultipartForm()
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, "uploadToGCPErr : "+err.Error())

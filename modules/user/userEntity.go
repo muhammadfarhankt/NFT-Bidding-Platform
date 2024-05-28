@@ -19,6 +19,8 @@ type (
 		UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
 		UserRoles    []UserRole         `bson:"user_roles"`
 		IsBlocked    bool               `json:"is_blocked" bson:"is_blocked"`
+		WishList     []string           `json:"wishlist" bson:"wishlist"`
+		Addressess   []AddressModel     `json:"addressess" bson:"addressess"`
 	}
 
 	UserRole struct {
@@ -42,9 +44,31 @@ type (
 	}
 
 	UserTransaction struct {
-		Id        primitive.ObjectID `bson:"_id,omitempty"`
-		UserId    string             `bson:"user_id"`
-		Amount    float64            `bson:"amount"`
-		CreatedAt time.Time          `bson:"created_at"`
+		Id           primitive.ObjectID `bson:"_id,omitempty"`
+		UserId       string             `bson:"user_id"`
+		Amount       float64            `bson:"amount"`
+		CreatedAt    time.Time          `bson:"created_at"`
+		AddressId    string             `bson:"address_id"`
+		OrderId      string             `bson:"order_id"`
+		OrderSuccess string             `bson:"order_success"`
+		UpdatedAt    time.Time          `bson:"updated_at"`
+	}
+
+	UserWishList struct {
+		UserId   string   `json:"user_id" bson:"user_id"`
+		WishList []string `json:"wishlist" bson:"wishlist"`
+	}
+
+	AddressModel struct {
+		Id        primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
+		Name      string             `json:"name" bson:"name"`
+		Phone     string             `json:"phone" bson:"phone"`
+		Street    string             `json:"street" bson:"street"`
+		City      string             `json:"city" bson:"city"`
+		State     string             `json:"state" bson:"state"`
+		Pincode   string             `json:"pincode" bson:"pincode"`
+		Country   string             `json:"country" bson:"country"`
+		CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+		UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 	}
 )

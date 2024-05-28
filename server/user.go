@@ -45,8 +45,22 @@ func (s *server) userService() {
 	// user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)
 	user.POST("/user/add-wallet-money", httpHandler.AddToWallet, s.middleware.JwtAuthorization)
 
+	user.GET("/user/payment", httpHandler.RazorPayLoad)
+	user.POST("/user/payment/confirm", httpHandler.RazorPaymentConfirm)
+
 	// user.GET("/user/wallet/:user_id", httpHandler.GetUserWalletAccount)
 	user.GET("/user/wallet", httpHandler.GetUserWalletAccount, s.middleware.JwtAuthorization)
+
+	// ----------------- Wish List ----------------- //
+	user.POST("/user/wishlist/:nft_id", httpHandler.AddToWishList, s.middleware.JwtAuthorization)
+	user.GET("/user/wishlist", httpHandler.GetWishList, s.middleware.JwtAuthorization)
+	user.DELETE("/user/wishlist/:nft_id", httpHandler.RemoveFromWishList, s.middleware.JwtAuthorization)
+
+	// ----------------- Address ----------------- //
+	user.POST("/user/address/", httpHandler.AddAddress, s.middleware.JwtAuthorization)
+	user.GET("/user/address/", httpHandler.GetAddress, s.middleware.JwtAuthorization)
+	user.PATCH("/user/address/:address_id", httpHandler.UpdateAddress, s.middleware.JwtAuthorization)
+	user.DELETE("/user/address/:address_id", httpHandler.DeleteAddress, s.middleware.JwtAuthorization)
 
 	// ----------------- ADMIN ----------------- //
 

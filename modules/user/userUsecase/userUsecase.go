@@ -3,6 +3,7 @@ package userUsecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -18,11 +19,27 @@ type (
 	UserUsecaseService interface {
 		InsertUser(pctx context.Context, req *user.CreateUserReq) (string, error)
 		FindOneUserProfile(pctx context.Context, userId string) (*user.UserProfile, error)
-		AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq) (*user.UserWalletAccount, error)
+
+		AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq, orderId string) (*user.UserWalletAccount, error)
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
+		UpdateUserTransaction(pctx context.Context, orderId, paymentId string) error
+
 		FindOneEmail(pctx context.Context, password, email string) (*userPb.UserProfile, error)
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*userPb.UserProfile, error)
+		FindOneUserOnEmail(pctx context.Context, email string) (*userPb.UserProfile, error)
+
 		BlockOrUnblockUser(pctx context.Context, userId string) (bool, error)
+
+		// Wish List
+		AddToWishList(pctx context.Context, userId, nftId string) (any, error)
+		GetWishList(pctx context.Context, userId string) (any, error)
+		RemoveFromWishList(pctx context.Context, userId, nftId string) error
+
+		// Address
+		AddAddress(pctx context.Context, userId string, req *user.CreateUserAddressReq) (*user.AddressModel, error)
+		GetAddress(pctx context.Context, userId string) (*[]user.AddressModel, error)
+		UpdateAddress(pctx context.Context, userId string, address_id string, req *user.CreateUserAddressReq) (*user.AddressModel, error)
+		DeleteAddress(pctx context.Context, userId, addressId string) error
 	}
 
 	userUsecase struct {
@@ -93,13 +110,16 @@ func (u *userUsecase) FindOneUserProfile(pctx context.Context, userId string) (*
 	}, nil
 }
 
-func (u *userUsecase) AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq) (*user.UserWalletAccount, error) {
+func (u *userUsecase) AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq, orderId string) (*user.UserWalletAccount, error) {
 
 	log.Println("req", req)
 	if err := u.userRepository.AddToWallet(pctx, &user.UserTransaction{
 		UserId:    req.UserId,
 		Amount:    req.Amount,
+		OrderId:   orderId,
+		AddressId: req.AddressId,
 		CreatedAt: utils.LocalTime(),
+		UpdatedAt: utils.LocalTime(),
 	}); err != nil {
 		return nil, err
 	}
@@ -130,13 +150,16 @@ func (u *userUsecase) FindOneEmail(pctx context.Context, password, email string)
 
 	loc, _ := time.LoadLocation("Asia/Calcutta")
 
+	fmt.Println("result findOneEmail \n", result)
+
 	return &userPb.UserProfile{
-		Id:        result.Id.Hex(),
-		Email:     result.Email,
-		Username:  result.Username,
-		RoleCode:  int32(roleCode),
-		CreatedAt: result.CreatedAt.In(loc).String(),
-		UpdatedAt: result.UpdatedAt.In(loc).String(),
+		Id:           result.Id.Hex(),
+		Email:        result.Email,
+		Username:     result.Username,
+		WalletAmount: result.WalletAmount,
+		RoleCode:     int32(roleCode),
+		CreatedAt:    result.CreatedAt.In(loc).String(),
+		UpdatedAt:    result.UpdatedAt.In(loc).String(),
 	}, nil
 }
 
@@ -194,3 +217,120 @@ func (u *userUsecase) BlockOrUnblockUser(pctx context.Context, userId string) (b
 // 		UpdatedAt: result.UpdatedAt.In(loc).String(),
 // 	}, nil
 // }
+
+// ---------------- Wish List ---------------- //
+func (u *userUsecase) AddToWishList(pctx context.Context, userId, nftId string) (any, error) {
+	return u.userRepository.AddToWishList(pctx, userId, nftId)
+}
+
+func (u *userUsecase) GetWishList(pctx context.Context, userId string) (any, error) {
+	return u.userRepository.GetWishList(pctx, userId)
+	// return nil, nil
+}
+
+func (u *userUsecase) RemoveFromWishList(pctx context.Context, userId, nftId string) error {
+	return u.userRepository.RemoveFromWishList(pctx, userId, nftId)
+	// return nil
+}
+
+// ---------------- Address ---------------- //
+func (u *userUsecase) AddAddress(pctx context.Context, userId string, req *user.CreateUserAddressReq) (*user.AddressModel, error) {
+	errorMessage := ""
+	if req.Name == "" {
+		errorMessage += "Name cannot be empty.    "
+	}
+	if req.Phone == "" {
+		errorMessage += "Phone cannot be empty.    "
+	} else if len(req.Phone) != 10 {
+		errorMessage += "Phone must be 10 digits.    "
+	}
+	if req.Pincode == "" {
+		errorMessage += "Pincode cannot be empty.    "
+	} else if len(req.Pincode) != 6 {
+		errorMessage += "Pincode must be 6 digits.    "
+	}
+	if req.Street == "" {
+		errorMessage += "Street cannot be empty.    "
+	}
+	if req.City == "" {
+		errorMessage += "City cannot be empty.    "
+	}
+	if req.State == "" {
+		errorMessage += "State cannot be empty.    "
+	}
+
+	if errorMessage != "" {
+		return nil, errors.New(errorMessage)
+	}
+
+	return u.userRepository.AddAddress(pctx, userId, req)
+}
+
+func (u *userUsecase) GetAddress(pctx context.Context, userId string) (*[]user.AddressModel, error) {
+	return u.userRepository.GetAddress(pctx, userId)
+}
+
+func (u *userUsecase) UpdateAddress(pctx context.Context, userId string, address_id string, req *user.CreateUserAddressReq) (*user.AddressModel, error) {
+	// fmt.Println("address_id: ", address_id)
+
+	errorMessage := ""
+	if req.Name == "" {
+		errorMessage += "Name cannot be empty.    "
+	}
+	if req.Phone == "" {
+		errorMessage += "Phone cannot be empty.    "
+	} else if len(req.Phone) != 10 {
+		errorMessage += "Phone must be 10 digits.    "
+	}
+	if req.Pincode == "" {
+		errorMessage += "Pincode cannot be empty.    "
+	} else if len(req.Pincode) != 6 {
+		errorMessage += "Pincode must be 6 digits.    "
+	}
+	if req.Street == "" {
+		errorMessage += "Street cannot be empty.    "
+	}
+	if req.City == "" {
+		errorMessage += "City cannot be empty.    "
+	}
+	if req.State == "" {
+		errorMessage += "State cannot be empty.    "
+	}
+
+	if errorMessage != "" {
+		return nil, errors.New(errorMessage)
+	}
+
+	return u.userRepository.UpdateAddress(pctx, userId, address_id, req)
+}
+
+func (u *userUsecase) DeleteAddress(pctx context.Context, userId, addressId string) error {
+	return u.userRepository.DeleteAddress(pctx, userId, addressId)
+}
+
+func (u *userUsecase) UpdateUserTransaction(pctx context.Context, orderId, paymentId string) error {
+	return u.userRepository.UpdateUserTransaction(pctx, orderId, paymentId)
+}
+
+func (u *userUsecase) FindOneUserOnEmail(pctx context.Context, email string) (*userPb.UserProfile, error) {
+	result, err := u.userRepository.FindOneEmail(pctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	roleCode := 0
+	for _, role := range result.UserRoles {
+		roleCode += role.RoleCode
+	}
+
+	loc, _ := time.LoadLocation("Asia/Calcutta")
+
+	return &userPb.UserProfile{
+		Id:        result.Id.Hex(),
+		Email:     result.Email,
+		Username:  result.Username,
+		RoleCode:  int32(roleCode),
+		CreatedAt: result.CreatedAt.In(loc).String(),
+		UpdatedAt: result.UpdatedAt.In(loc).String(),
+	}, nil
+}

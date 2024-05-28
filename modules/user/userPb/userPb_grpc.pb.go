@@ -24,6 +24,7 @@ const (
 	UserGrpcService_CredentialSearch_FullMethodName            = "/UserGrpcService/CredentialSearch"
 	UserGrpcService_FindOneUserProfileToRefresh_FullMethodName = "/UserGrpcService/FindOneUserProfileToRefresh"
 	UserGrpcService_GetUserWalletAccount_FullMethodName        = "/UserGrpcService/GetUserWalletAccount"
+	UserGrpcService_FindOneUserProfile_FullMethodName          = "/UserGrpcService/FindOneUserProfile"
 )
 
 // UserGrpcServiceClient is the client API for UserGrpcService service.
@@ -33,6 +34,7 @@ type UserGrpcServiceClient interface {
 	CredentialSearch(ctx context.Context, in *CredentialSearchReq, opts ...grpc.CallOption) (*UserProfile, error)
 	FindOneUserProfileToRefresh(ctx context.Context, in *FindOneUserProfileToRefreshReq, opts ...grpc.CallOption) (*UserProfile, error)
 	GetUserWalletAccount(ctx context.Context, in *GetUserWalletAccountReq, opts ...grpc.CallOption) (*GetUserWalletAccountRes, error)
+	FindOneUserProfile(ctx context.Context, in *EmailSearchReq, opts ...grpc.CallOption) (*UserProfile, error)
 }
 
 type userGrpcServiceClient struct {
@@ -70,6 +72,15 @@ func (c *userGrpcServiceClient) GetUserWalletAccount(ctx context.Context, in *Ge
 	return out, nil
 }
 
+func (c *userGrpcServiceClient) FindOneUserProfile(ctx context.Context, in *EmailSearchReq, opts ...grpc.CallOption) (*UserProfile, error) {
+	out := new(UserProfile)
+	err := c.cc.Invoke(ctx, UserGrpcService_FindOneUserProfile_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserGrpcServiceServer is the server API for UserGrpcService service.
 // All implementations must embed UnimplementedUserGrpcServiceServer
 // for forward compatibility
@@ -77,6 +88,7 @@ type UserGrpcServiceServer interface {
 	CredentialSearch(context.Context, *CredentialSearchReq) (*UserProfile, error)
 	FindOneUserProfileToRefresh(context.Context, *FindOneUserProfileToRefreshReq) (*UserProfile, error)
 	GetUserWalletAccount(context.Context, *GetUserWalletAccountReq) (*GetUserWalletAccountRes, error)
+	FindOneUserProfile(context.Context, *EmailSearchReq) (*UserProfile, error)
 	mustEmbedUnimplementedUserGrpcServiceServer()
 }
 
@@ -92,6 +104,9 @@ func (UnimplementedUserGrpcServiceServer) FindOneUserProfileToRefresh(context.Co
 }
 func (UnimplementedUserGrpcServiceServer) GetUserWalletAccount(context.Context, *GetUserWalletAccountReq) (*GetUserWalletAccountRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserWalletAccount not implemented")
+}
+func (UnimplementedUserGrpcServiceServer) FindOneUserProfile(context.Context, *EmailSearchReq) (*UserProfile, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindOneUserProfile not implemented")
 }
 func (UnimplementedUserGrpcServiceServer) mustEmbedUnimplementedUserGrpcServiceServer() {}
 
@@ -160,6 +175,24 @@ func _UserGrpcService_GetUserWalletAccount_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserGrpcService_FindOneUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmailSearchReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserGrpcServiceServer).FindOneUserProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserGrpcService_FindOneUserProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserGrpcServiceServer).FindOneUserProfile(ctx, req.(*EmailSearchReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserGrpcService_ServiceDesc is the grpc.ServiceDesc for UserGrpcService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -178,6 +211,10 @@ var UserGrpcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserWalletAccount",
 			Handler:    _UserGrpcService_GetUserWalletAccount_Handler,
+		},
+		{
+			MethodName: "FindOneUserProfile",
+			Handler:    _UserGrpcService_FindOneUserProfile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

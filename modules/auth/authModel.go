@@ -42,11 +42,17 @@ type (
 	}
 
 	OtpRequestReq struct {
-		Email string `json:"email" form:"email" validate:"required,email,max=255"`
+		Email string `json:"email" form:"email" validate:"required,max=255"`
 	}
 
 	OtpVerificationReq struct {
-		Email string `json:"email" form:"email" validate:"required,email,max=255"`
+		Email string `json:"email" form:"email" validate:"required,max=255"`
 		Otp   string `json:"otp" form:"otp" validate:"required,max=6"`
+	}
+
+	OtpModel struct {
+		Email     string    `json:"email" bson:"email"`
+		Otp       string    `json:"otp" bson:"otp"`
+		ExpiresAt time.Time `json:"expires_at" bson:"expires_at"`
 	}
 )

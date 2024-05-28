@@ -28,6 +28,10 @@ func (g *userGrpcHandler) FindOneUserProfileToRefresh(ctx context.Context, req *
 	return g.userUsecase.FindOneUserProfileToRefresh(ctx, req.UserId)
 }
 
+func (g *userGrpcHandler) FindOneUserProfile(ctx context.Context, req *userPb.EmailSearchReq) (*userPb.UserProfile, error) {
+	return g.userUsecase.FindOneUserOnEmail(ctx, req.Email)
+}
+
 func (g *userGrpcHandler) GetUserWalletAccount(ctx context.Context, req *userPb.GetUserWalletAccountReq) (*userPb.GetUserWalletAccountRes, error) {
 	return nil, nil
 }

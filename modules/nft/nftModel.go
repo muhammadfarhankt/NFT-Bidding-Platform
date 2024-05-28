@@ -1,6 +1,8 @@
 package nft
 
 import (
+	"time"
+
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/models"
 )
 
@@ -56,5 +58,19 @@ type (
 
 	EnableOrDisableNftCategoryReq struct {
 		UsageStatus bool `json:"usage_status"`
+	}
+
+	BidShowCase struct {
+		BidId      string    `json:"bid_id"`
+		NftId      string    `json:"nft_id"`
+		Price      float64   `json:"price"`
+		ExpiryDate time.Time `json:"expiry_date"`
+		IsDeleted  bool      `json:"is_deleted"`
+	}
+
+	CreateBidReq struct {
+		NftId      string    `json:"nft_id" validate:"required"`
+		Price      float64   `json:"price" validate:"required"`
+		ExpiryDate time.Time `json:"expiry_date" validate:"required"`
 	}
 )

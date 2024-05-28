@@ -25,7 +25,18 @@ type (
 	}
 
 	CreateUserTransactionReq struct {
-		UserId string  `json:"user_id" validate:"required,max=64"`
-		Amount float64 `json:"amount" validate:"required"`
+		UserId    string  `json:"user_id" validate:"required,max=64"`
+		Amount    float64 `json:"amount" validate:"required"`
+		AddressId string  `json:"address_id" validate:"required"`
+	}
+
+	CreateUserAddressReq struct {
+		Name    string `json:"name" form:"name" validate:"required,max=255"`
+		Street  string `json:"street" form:"street" validate:"required,max=255"`
+		City    string `json:"city" form:"city" validate:"required,max=255"`
+		Phone   string `json:"phone" form:"phone" validate:"required,max=255"`
+		Pincode string `json:"pincode" form:"pincode" validate:"required,max=255"`
+		State   string `json:"state" form:"state" validate:"required,max=255"`
+		Country string `json:"country" form:"country" validate:"required,max=255"`
 	}
 )

@@ -23,12 +23,13 @@ type (
 		InsertOneUserCredential(pctx context.Context, req *auth.Credential) (primitive.ObjectID, error)
 		FindOneUserCredential(pctx context.Context, credentialId string) (*auth.Credential, error)
 		FindOneUserProfileToRefresh(pctx context.Context, grpcUrl string, req *userPb.FindOneUserProfileToRefreshReq) (*userPb.UserProfile, error)
+		FindOneUserProfile(pctx context.Context, grpcUrl string, req *userPb.EmailSearchReq) (*userPb.UserProfile, error)
 		UpdateOneUserCredential(pctx context.Context, credentialId string, req *auth.UpdateRefreshTokenReq) error
 		DeleteOneUserCredential(pctx context.Context, credentialId string) (int64, error)
 		FindOneAccessToken(pctx context.Context, accessToken string) (*auth.Credential, error)
 		RolesCount(pctx context.Context) (int64, error)
-		InsertOneOtp(pctx context.Context, req *auth.OtpRequestReq, otp string) error
-		//OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (*userPb.UserProfile, error)
+		InsertOneOtp(pctx context.Context, email, otp string) error
+		OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (bool, error)
 	}
 
 	authRepository struct {
@@ -193,7 +194,7 @@ func (r *authRepository) RolesCount(pctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (r *authRepository) InsertOneOtp(pctx context.Context, req *auth.OtpRequestReq, otp string) error {
+func (r *authRepository) InsertOneOtp(pctx context.Context, email, otp string) error {
 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
 	defer cancel()
 
@@ -201,19 +202,37 @@ func (r *authRepository) InsertOneOtp(pctx context.Context, req *auth.OtpRequest
 	col := db.Collection("otp")
 
 	// Check if the email exists in the user database
-	userCol := db.Collection("users")
-	user := new(auth.UserLoginReq)
-	if err := userCol.FindOne(ctx, bson.M{"email": req.Email}).Decode(user); err != nil {
-		log.Printf("Error: InsertOneOtp failed: %s", err.Error())
-		return errors.New("error: email does not exist")
+	// userCol := db.Collection("users")
+	// user := new(auth.UserLoginReq)
+	// if err := userCol.FindOne(ctx, bson.M{"email": email}).Decode(user); err != nil {
+	// 	log.Printf("Error: InsertOneOtp failed: %s", err.Error())
+	// 	return errors.New("error: email does not exist")
+	// }
+
+	// check if otp already exists in the "otp" collection
+	otpDoc := new(auth.OtpModel)
+	if err := col.FindOne(ctx, bson.M{"email": email}).Decode(otpDoc); err == nil {
+		// check if the OTP has expired
+		if time.Now().After(otpDoc.ExpiresAt) {
+			// Delete the expired OTP from the "otp" collection
+			_, err := col.DeleteOne(ctx, bson.M{"email": email})
+			if err != nil {
+				log.Printf("Error: InsertOneOtp failed: %s", err.Error())
+				return errors.New("error: failed to delete expired OTP")
+			}
+		} else {
+			return errors.New("error: OTP already exists. Please wait for the OTP to expire")
+		}
 	}
 
 	// Save the OTP in the "otp" collection
-	otpDoc := bson.M{
-		"email": req.Email,
-		"otp":   otp,
+	otpDocument := bson.M{
+		"email":      email,
+		"otp":        otp,
+		"created_at": time.Now(),
+		"expires_at": time.Now().Add(5 * time.Minute),
 	}
-	_, err := col.InsertOne(ctx, otpDoc)
+	_, err := col.InsertOne(ctx, otpDocument)
 	if err != nil {
 		log.Printf("Error: InsertOneOtp failed: %s", err.Error())
 		return errors.New("error: failed to save OTP")
@@ -222,36 +241,57 @@ func (r *authRepository) InsertOneOtp(pctx context.Context, req *auth.OtpRequest
 	return nil
 }
 
-// func (r *authRepository) OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (*userPb.UserProfile, error) {
-// 	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
-// 	defer cancel()
+func (r *authRepository) OtpVerification(pctx context.Context, req *auth.OtpVerificationReq) (bool, error) {
+	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+	defer cancel()
 
-// 	db := r.authDbConn(ctx)
-// 	col := db.Collection("otp")
+	db := r.authDbConn(ctx)
+	col := db.Collection("otp")
 
-// 	otpDoc := new(auth.Otp)
-// 	if err := col.FindOne(ctx, bson.M{"email": req.Email, "otp": req.Otp}).Decode(otpDoc); err != nil {
-// 		log.Printf("Error: OtpVerification failed: %s", err.Error())
-// 		return nil, errors.New("error: invalid OTP")
-// 	}
+	// check if the email exists in the "otp" collection
+	otpDoc := new(auth.OtpModel)
+	if err := col.FindOne(ctx, bson.M{"email": req.Email}).Decode(otpDoc); err != nil {
+		log.Printf("Error: OtpVerification failed: %s", err.Error())
+		return false, errors.New("error: Please request for an OTP first")
+	}
 
-// 	// Delete the OTP from the "otp" collection
-// 	_, err := col.DeleteOne(ctx, bson.M{"email": req.Email})
-// 	if err != nil {
-// 		log.Printf("Error: OtpVerification failed: %s", err.Error())
-// 		return nil, errors.New("error: failed to delete OTP")
-// 	}
+	// check if the OTP has expired
+	if time.Now().After(otpDoc.ExpiresAt) {
+		// return expired
+		return false, errors.New("error: OTP has expired")
+	}
 
-// 	// Check if the email exists in the user database
-// 	userCol := db.Collection("users")
-// 	user := new(auth.User)
-// 	if err := userCol.FindOne(ctx, bson.M{"email": req.Email}).Decode(user); err != nil {
-// 		log.Printf("Error: OtpVerification failed: %s", err.Error())
-// 		return nil, errors.New("error: email does not exist")
-// 	}
+	// check if the OTP is correct
+	if req.Otp != otpDoc.Otp {
+		return false, errors.New("error: incorrect OTP")
+	}
 
-// 	// Generate a new access token
-// 	accessToken, err := jwtAuth.GenerateAccessToken(user.Id)
+	// delete the OTP from the "otp" collection
+	_, err := col.DeleteOne(ctx, bson.M{"email": req.Email})
+	if err != nil {
+		log.Printf("Error: OtpVerification failed: %s", err.Error())
+		return false, errors.New("error: failed to delete OTP")
+	}
 
-// 	return userProfile, nil
-// }
+	return true, nil
+}
+
+func (r *authRepository) FindOneUserProfile(pctx context.Context, grpcUrl string, req *userPb.EmailSearchReq) (*userPb.UserProfile, error) {
+	ctx, cancel := context.WithTimeout(pctx, 30*time.Second)
+	defer cancel()
+
+	jwtAuth.SetApiKeyInContext(&ctx)
+	conn, err := grpcConn.NewGrpcClient(grpcUrl)
+	if err != nil {
+		log.Printf("Error: gRPC connection failed: %s", err.Error())
+		return nil, errors.New("error: gRPC connection failed")
+	}
+
+	result, err := conn.User().FindOneUserProfile(ctx, req)
+	if err != nil {
+		log.Printf("Error: FindOneUserProfile failed: %s", err.Error())
+		return nil, errors.New("error: user profile not found")
+	}
+
+	return result, nil
+}

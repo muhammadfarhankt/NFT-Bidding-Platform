@@ -148,7 +148,7 @@ func ParseToken(secret string, tokenString string) (*AuthMapClaims, error) {
 			log.Println("error: jwt.ErrTokenMalformed : token format is invalid")
 			return nil, errors.New("error: token format is invalid")
 		} else if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, errors.New("error: token is expired")
+			return nil, errors.New("error: token is expired. Pls Login again")
 		} else {
 			log.Println("error: token is invalid")
 			return nil, errors.New("error: token is invalid")

@@ -9,14 +9,19 @@ message UserProfile {
     string id = 1;
     string email = 2;
     string username = 3;
-    int32 roleCode = 4;
-    string created_at = 5;
-    string updated_at = 6;
+    double walletAmount = 4;
+    int32 roleCode = 5;
+    string created_at = 6;
+    string updated_at = 7;
 }
 
 message CredentialSearchReq {
     string email = 1;
     string password = 2;
+}
+
+message EmailSearchReq {
+    string email = 1;
 }
 
 message FindOneUserProfileToRefreshReq {
@@ -37,4 +42,5 @@ service UserGrpcService {
     rpc CredentialSearch(CredentialSearchReq) returns (UserProfile);
     rpc FindOneUserProfileToRefresh (FindOneUserProfileToRefreshReq) returns (UserProfile);
     rpc GetUserWalletAccount (GetUserWalletAccountReq) returns (GetUserWalletAccountRes);
+    rpc FindOneUserProfile(EmailSearchReq) returns (UserProfile);
 }

@@ -94,17 +94,34 @@ func (h *authHttpHandler) Logout(c echo.Context) error {
 }
 
 func (h *authHttpHandler) OtpRequest(c echo.Context) error {
+
 	ctx := context.Background()
+	// wrapper := request.ContextWrapper(c)
 
-	wrapper := request.ContextWrapper(c)
+	// sending email as path variables in request
+	email := c.Param("email")
+	// fmt.Println("email: ", email)
 
-	req := new(auth.OtpRequestReq)
+	// req := new(auth.OtpRequestReq)
 
-	if err := wrapper.Bind(req); err != nil {
-		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	// fmt.Println("req: ", req)
+
+	if email == "" {
+		return response.ErrResponse(c, http.StatusBadRequest, "Email is required")
 	}
 
-	err := h.authUsecase.OtpRequest(ctx, req)
+	// email validation using govalidator
+	// if !request.ValidateEmail(req.Email) {
+	// 	return response.ErrResponse(c, http.StatusBadRequest, "Invalid Email")
+	// }
+
+	// if err := wrapper.Bind(email); err != nil {
+	// 	return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	// }
+
+	// fmt.Println("username : ", h.cfg.Email.Username)
+
+	err := h.authUsecase.OtpRequest(ctx, email, h.cfg)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -113,20 +130,27 @@ func (h *authHttpHandler) OtpRequest(c echo.Context) error {
 }
 
 func (h *authHttpHandler) OtpVerification(c echo.Context) error {
+
 	ctx := context.Background()
-
 	wrapper := request.ContextWrapper(c)
-
 	req := new(auth.OtpVerificationReq)
 
 	if err := wrapper.Bind(req); err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
 
-	res, err := h.authUsecase.OtpVerification(ctx, req)
+	// email := c.QueryParam("email")
+
+	fmt.Println("otp login req: ", req)
+
+	res, err := h.authUsecase.OtpVerification(ctx, h.cfg, req)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
+
+	// if res == nil {
+	// 	return response.ErrResponse(c, http.StatusBadRequest, "OTP Verification Success")
+	// }
 
 	return response.SuccessResponse(c, http.StatusOK, res)
 }

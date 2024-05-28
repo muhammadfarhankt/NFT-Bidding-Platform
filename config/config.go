@@ -16,6 +16,8 @@ type (
 		Kafka    Kafka
 		Grpc     Grpc
 		Paginate Paginate
+		Email    Email
+		Razorpay Razorpay
 	}
 
 	App struct {
@@ -53,6 +55,16 @@ type (
 	Paginate struct {
 		NftNextPageBasedUrl       string
 		InventoryNextPageBasedUrl string
+	}
+
+	Email struct {
+		Username string
+		Password string
+	}
+
+	Razorpay struct {
+		Key    string
+		Secret string
 	}
 )
 
@@ -103,6 +115,14 @@ func LoadConfig(path string) Config {
 		Paginate: Paginate{
 			NftNextPageBasedUrl:       os.Getenv("PAGINATE_NFT_NEXT_PAGE_BASED_URL"),
 			InventoryNextPageBasedUrl: os.Getenv("PAGINATE_INVENTORY_NEXT_PAGE_BASED_URL"),
+		},
+		Email: Email{
+			Username: os.Getenv("APP_EMAIL"),
+			Password: os.Getenv("APP_PASSWORD"),
+		},
+		Razorpay: Razorpay{
+			Key:    os.Getenv("RAZOR_PAY_KEY"),
+			Secret: os.Getenv("RAZOR_PAY_SECRET"),
 		},
 	}
 }

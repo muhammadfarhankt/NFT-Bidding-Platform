@@ -36,15 +36,16 @@ func GenerateOtp() string {
 	return fmt.Sprintf("%06d", 100000+rand.Intn(900000))
 }
 
-func SendOtpToEmail(email, otp string) error {
+func SendOtpToEmail(fromEmail, password, toEmail, otp string) error {
 	m := mail.NewMessage()
-	m.SetHeader("From", "farhanlatheefkt.com")
-	m.SetHeader("To", email)
+	m.SetHeader("From", fromEmail)
+	m.SetHeader("To", toEmail)
 	m.SetHeader("Subject", "OTP Verification")
-	m.SetBody("text/plain", "Your OTP is: "+otp)
+	m.SetBody("text/plain", "Your OTP is : "+otp)
 
+	// fmt.Println("From : ", fromEmail, "\n to : ", toEmail, "\n Pass : ", password)
 	//SMTP port (TLS): 587 - SMTP port (SSL): 465
-	d := mail.NewDialer("smtp.gmail.com", 587, "farhanlatheefkt@gmail.com", "FARHAN@KT")
+	d := mail.NewDialer("smtp.gmail.com", 587, fromEmail, password)
 
 	if err := d.DialAndSend(m); err != nil {
 		return err

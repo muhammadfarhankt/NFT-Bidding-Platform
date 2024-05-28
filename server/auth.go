@@ -42,8 +42,11 @@ func (s *server) authService() {
 	auth.POST("/auth/logout", httpHandler.Logout)
 
 	// otp request
-	auth.POST("/user/otp-request", httpHandler.OtpRequest)
+	auth.POST("/auth/otp-request/:email", httpHandler.OtpRequest)
 
 	// otp verification
-	auth.POST("/user/otp-verification", httpHandler.OtpVerification)
+	auth.POST("/auth/otp-verification", httpHandler.OtpVerification)
+
+	// password reset using otp
+	// auth.POST("/auth/password-reset", httpHandler.PasswordReset)
 }
