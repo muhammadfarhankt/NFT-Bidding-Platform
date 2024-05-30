@@ -292,6 +292,6 @@ func (r *authRepository) FindOneUserProfile(pctx context.Context, grpcUrl string
 		log.Printf("Error: FindOneUserProfile failed: %s", err.Error())
 		return nil, errors.New("error: user profile not found")
 	}
-
+	// fmt.Println("authRepository result: ", result)
 	return result, nil
 }

@@ -49,6 +49,7 @@ type (
 
 		// --- Admin ---
 		BlockOrUnblockUser(c echo.Context) error
+		SalesReport(c echo.Context) error
 	}
 
 	userHttpHandler struct {
@@ -429,4 +430,15 @@ func RazorPaymentVerification(sign, orderId, paymentId, secret string) error {
 	} else {
 		return nil
 	}
+}
+
+func (h *userHttpHandler) SalesReport(c echo.Context) error {
+	ctx := context.Background()
+
+	res, err := h.userUsecase.SalesReport(ctx)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
 }

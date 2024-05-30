@@ -37,10 +37,22 @@ message GetUserWalletAccountRes {
     double balance = 2;
 }
 
+message DeductWalletAmountReq {
+    string userId = 1;
+    double amount = 2;
+}
+
+message AddWalletAmountReq {
+    string userId = 1;
+    double amount = 2;
+}
+
 // Methods
 service UserGrpcService {
     rpc CredentialSearch(CredentialSearchReq) returns (UserProfile);
     rpc FindOneUserProfileToRefresh (FindOneUserProfileToRefreshReq) returns (UserProfile);
     rpc GetUserWalletAccount (GetUserWalletAccountReq) returns (GetUserWalletAccountRes);
     rpc FindOneUserProfile(EmailSearchReq) returns (UserProfile);
+    rpc DeductWalletAmount(DeductWalletAmountReq) returns (GetUserWalletAccountRes);
+    rpc AddWalletAmount(AddWalletAmountReq) returns (GetUserWalletAccountRes);
 }

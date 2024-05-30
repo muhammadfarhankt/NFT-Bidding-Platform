@@ -35,14 +35,17 @@ type (
 		DeleteCategory(pctx context.Context, categoryId string) error
 
 		// ------------------- Bidding ------------------- //
-		CreateBid(pctx context.Context, req *nft.Bid) (primitive.ObjectID, error)
-		// FindOneBid(pctx context.Context, bidId string) (*nft.Bid, error)
-		// EditBid(pctx context.Context, bidId string, req primitive.M) error
-		// DeleteBid(pctx context.Context, bidId string) error
+		FindManyBids(pctx context.Context, userId string) ([]*nft.Bid, error)
+		CreateBid(pctx context.Context, userId string, req *nft.CreateBidReq) (primitive.ObjectID, error)
+		FindOneBid(pctx context.Context, bidId string) (*nft.Bid, error)
+		EditBid(pctx context.Context, bidId string, req primitive.M) error
+		DeleteBid(pctx context.Context, bidId string) error
 
 		// ------------------- NFT Bidding User ------------------- //
-		// BidNft(pctx context.Context, req *nft.Bid) (primitive.ObjectID, error)
-		// WithdrawBid(pctx context.Context, bidId string) error
+		FindOneUserBid(pctx context.Context, userId, bidId string) (*nft.SingleBid, error)
+		FindUserBids(pctx context.Context, userId string) (any, error)
+		BidNft(pctx context.Context, userId, nftId, price string) (primitive.ObjectID, error)
+		WithdrawBid(pctx context.Context, bidId string) error
 	}
 
 	nftRepository struct {
@@ -208,20 +211,4 @@ func (r *nftRepository) DeleteNft(pctx context.Context, nftId string) error {
 	log.Printf("DeleteNft result: %v", result.ModifiedCount)
 
 	return nil
-}
-
-func (r *nftRepository) CreateBid(pctx context.Context, req *nft.Bid) (primitive.ObjectID, error) {
-	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
-	defer cancel()
-
-	db := r.nftDbConn(ctx)
-	col := db.Collection("bids")
-
-	bidId, err := col.InsertOne(ctx, req)
-	if err != nil {
-		log.Printf("Error: CreateBid: %s", err.Error())
-		return primitive.NilObjectID, errors.New("error: create bid failed")
-	}
-
-	return bidId.InsertedID.(primitive.ObjectID), nil
 }

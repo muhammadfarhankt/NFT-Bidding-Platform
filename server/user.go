@@ -66,4 +66,7 @@ func (s *server) userService() {
 
 	// block or unblock user
 	user.GET("/admin/:user_id/block-unblock", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.BlockOrUnblockUser, []int{1, 0})))
+
+	// sales report
+	user.GET("/admin/payment-report-pdf", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.SalesReport, []int{1})))
 }

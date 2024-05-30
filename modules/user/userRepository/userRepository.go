@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	nftPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft/nftPb"
@@ -29,6 +30,10 @@ type (
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
 		UpdateUserTransaction(pctx context.Context, orderId, paymentId string) error
 
+		// Bidding wallet amount deduction and refund
+		DeductWalletAmount(pctx context.Context, userId string, amount float64) (*user.UserWalletAccount, error)
+		AddWalletAmount(pctx context.Context, userId string, amount float64) (*user.UserWalletAccount, error)
+
 		FindOneEmail(pctx context.Context, email string) (*user.User, error)
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*user.User, error)
 		BlockOrUnblockUser(pctx context.Context, userId string, isActive bool) error
@@ -43,6 +48,9 @@ type (
 		GetAddress(pctx context.Context, userId string) (*[]user.AddressModel, error)
 		UpdateAddress(pctx context.Context, userId string, address_id string, req *user.CreateUserAddressReq) (*user.AddressModel, error)
 		DeleteAddress(pctx context.Context, userId, addressId string) error
+
+		// admin
+		SalesReport(pctx context.Context) (any, error)
 	}
 
 	userRepository struct {
@@ -140,9 +148,9 @@ func (r *userRepository) AddToWallet(pctx context.Context, req *user.UserTransac
 
 	db := r.userDbConn(ctx)
 	col := db.Collection("user_transactions")
-	// colUser := db.Collection("users")
-	// userId := req.UserId
-	// userIdTrim := strings.TrimPrefix(userId, "user:")
+	colUser := db.Collection("users")
+	userId := req.UserId
+	userIdTrim := strings.TrimPrefix(userId, "user:")
 
 	result, err := col.InsertOne(ctx, req)
 	if err != nil {
@@ -151,18 +159,18 @@ func (r *userRepository) AddToWallet(pctx context.Context, req *user.UserTransac
 	}
 	log.Printf("Result: AddToWallet: %v", result.InsertedID)
 
-	// // Get user wallet account
-	// userWallet, err := r.GetUserWalletAccount(ctx, userId)
-	// // Update user wallet account in the database
-	// _, err = colUser.UpdateOne(
-	// 	ctx,
-	// 	bson.M{"_id": utils.ConvertToObjectId(userIdTrim)},
-	// 	bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance}},
-	// )
-	// if err != nil {
-	// 	log.Printf("Error: AddToWallet: %s", err.Error())
-	// 	return errors.New("error: failed to update user wallet account")
-	// }
+	// Get user wallet account
+	userWallet, err := r.GetUserWalletAccount(ctx, userId)
+	// Update user wallet account in the database
+	_, err = colUser.UpdateOne(
+		ctx,
+		bson.M{"_id": utils.ConvertToObjectId(userIdTrim)},
+		bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance}},
+	)
+	if err != nil {
+		log.Printf("Error: AddToWallet: %s", err.Error())
+		return errors.New("error: failed to update user wallet account")
+	}
 
 	return nil
 }
@@ -172,46 +180,63 @@ func (r *userRepository) GetUserWalletAccount(pctx context.Context, userId strin
 	defer cancel()
 
 	db := r.userDbConn(ctx)
-	col := db.Collection("user_transactions")
+	col := db.Collection("users")
 
-	log.Println("userId : ", userId)
+	userIdTrim := strings.TrimPrefix(userId, "user:")
 
-	filter := bson.A{
-		bson.D{{"$match", bson.D{{"user_id", userId}}}},
-		bson.D{
-			{"$group",
-				bson.D{
-					{"_id", "$user_id"},
-					{"balance", bson.D{{"$sum", "$amount"}}},
-				},
-			},
-		},
-		bson.D{
-			{"$project",
-				bson.D{
-					{"user_id", "$_id"},
-					{"_id", 0},
-					{"balance", 1},
-				},
-			},
-		},
-	}
+	result := new(user.User)
 
-	cursors, err := col.Aggregate(ctx, filter)
-	if err != nil {
+	if err := col.FindOne(ctx, bson.M{"_id": utils.ConvertToObjectId(userIdTrim)}).Decode(result); err != nil {
 		log.Printf("Error: GetUserWalletAccount: %s", err.Error())
-		return nil, errors.New("error: failed to get user wallet account")
+		return nil, errors.New("error: user wallet account not found")
 	}
 
-	result := new(user.UserWalletAccount)
-	for cursors.Next(ctx) {
-		if err := cursors.Decode(result); err != nil {
-			log.Printf("Error: GetUserWalletAccount: %s", err.Error())
-			return nil, errors.New("error: failed to get user wallet account")
-		}
+	// log.Println("userId : ", userId)
+
+	// filter := bson.A{
+	// 	bson.D{{"$match", bson.D{{"user_id", userId}}}},
+	// 	bson.D{
+	// 		{"$group",
+	// 			bson.D{
+	// 				{"_id", "$user_id"},
+	// 				{"balance", bson.D{{"$sum", "$amount"}}},
+	// 			},
+	// 		},
+	// 	},
+	// 	bson.D{
+	// 		{"$project",
+	// 			bson.D{
+	// 				{"user_id", "$_id"},
+	// 				{"_id", 0},
+	// 				{"balance", 1},
+	// 			},
+	// 		},
+	// 	},
+	// }
+
+	// cursors, err := col.Aggregate(ctx, filter)
+	// if err != nil {
+	// 	log.Printf("Error: GetUserWalletAccount: %s", err.Error())
+	// 	return nil, errors.New("error: failed to get user wallet account")
+	// }
+
+	// for cursors.Next(ctx) {
+	// 	if err := cursors.Decode(result); err != nil {
+	// 		log.Printf("Error: GetUserWalletAccount: %s", err.Error())
+	// 		return nil, errors.New("error: failed to get user wallet account")
+	// 	}
+	// }
+
+	// fmt.Println("GetUserWalletAccount UserRepository result: ", result)
+
+	userWallet := &user.UserWalletAccount{
+		UserId:  userId,
+		Balance: result.WalletAmount,
 	}
 
-	return result, nil
+	// fmt.Println("userWallet: ", userWallet)
+
+	return userWallet, nil
 }
 
 func (r *userRepository) FindOneEmail(pctx context.Context, email string) (*user.User, error) {
@@ -610,3 +635,115 @@ func (r *userRepository) UpdateUserTransaction(pctx context.Context, orderId, pa
 
 	return nil
 }
+
+func (r *userRepository) DeductWalletAmount(pctx context.Context, userId string, amount float64) (*user.UserWalletAccount, error) {
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("users")
+
+	// Get user wallet account
+	userWallet, err := r.GetUserWalletAccount(ctx, userId)
+	if err != nil {
+		log.Printf("Error: DeductWalletAmount: %s", err.Error())
+		return nil, errors.New("error: failed to get user wallet account")
+	}
+
+	// Check if user has enough balance
+	if userWallet.Balance < amount {
+		return nil, errors.New("error: insufficient balance")
+	}
+
+	// Deduct amount from user wallet
+	update := bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance - amount}}
+	if _, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(userId)}, update); err != nil {
+		log.Printf("Error: DeductWalletAmount: %s", err.Error())
+		return nil, errors.New("error: failed to deduct amount from user wallet")
+	}
+
+	// return updated user wallet account
+	return &user.UserWalletAccount{
+		UserId:  userId,
+		Balance: userWallet.Balance - amount,
+	}, nil
+}
+
+func (r *userRepository) AddWalletAmount(pctx context.Context, userId string, amount float64) (*user.UserWalletAccount, error) {
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("users")
+
+	// Get user wallet account
+	userWallet, err := r.GetUserWalletAccount(ctx, userId)
+	if err != nil {
+		log.Printf("Error: AddWalletAmount: %s", err.Error())
+		return nil, errors.New("error: failed to get user wallet account")
+	}
+
+	// Add amount to user wallet
+	update := bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance + amount}}
+	if _, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(userId)}, update); err != nil {
+		log.Printf("Error: AddWalletAmount: %s", err.Error())
+		return nil, errors.New("error: failed to add amount to user wallet")
+	}
+
+	// return updated user wallet account
+	return &user.UserWalletAccount{
+		UserId:  userId,
+		Balance: userWallet.Balance + amount,
+	}, nil
+}
+
+func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
+	return nil, nil
+}
+
+// func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
+// 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+// 	defer cancel()
+
+// 	db := r.userDbConn(ctx)
+// 	col := db.Collection("user_transactions")
+
+// 	// Get all user transactions
+// 	cursor, err := col.Find(ctx, bson.M{})
+// 	if err != nil {
+// 		log.Printf("Error: SalesReport: %s", err.Error())
+// 		return nil, errors.New("error: failed to get user transactions")
+// 	}
+
+// 	var userTransactions []*user.UserTransaction
+// 	if err := cursor.All(ctx, &userTransactions); err != nil {
+// 		log.Printf("Error: SalesReport: %s", err.Error())
+// 		return nil, errors.New("error: failed to get user transactions")
+// 	}
+
+// 	//================== Creating  new PDF document ========================
+// 	pdf := gofpdf.New("P", "mm", "A4", "")
+// 	pdf.AddPage()
+
+// 	pdf.SetFont("Arial", "", 12)
+
+// 	//================== Add headers to the PDF ============================
+// 	headers := []string{"Sl No.", "Order ID", "Order Date", "Amount", "Order Status"}
+// 	for _, header := range headers {
+// 		pdf.Cell(40, 10, header)
+// 	}
+// 	pdf.Ln(-1)
+
+// 	//================== Add data to the PDF ============================
+// 	for i, transaction := range userTransactions {
+// 		pdf.Cell(40, 10, fmt.Sprintf("%d", i+1))
+// 		pdf.Cell(40, 10, transaction.OrderId)
+// 		pdf.Cell(40, 10, transaction.CreatedAt.Format("2006-01-02 15:04:05"))
+// 		pdf.Cell(40, 10, fmt.Sprintf("%f", transaction.Amount))
+// 		pdf.Cell(40, 10, transaction.OrderStatus)
+// 		pdf.Ln(-1)
+// 	}
+
+// 	// return user transactions
+// 	return userTransactions, nil
+// }

@@ -221,7 +221,7 @@ func (u *authUsecase) OtpVerification(pctx context.Context, cfg *config.Config, 
 		return nil, errors.New("error: user not found")
 	}
 
-	fmt.Println("profile: ", profile)
+	// fmt.Println("profile: ", profile)
 
 	// find req.Email in otp collection
 	otp, err := u.authRepository.OtpVerification(pctx, req)

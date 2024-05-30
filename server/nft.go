@@ -93,7 +93,10 @@ func (s *server) nftService() {
 	//Delete Category
 	nft.DELETE("/nft/category/:category_id", s.middleware.JwtAuthorization(s.middleware.RbacAuthorization(httpHandler.DeleteCategory, []int{1, 0})))
 
-	// -------------------------------- NFT Bidding End Points -------------------------------- //
+	// -------------------------------- Bidding NFT Owner End Points -------------------------------- //
+	// show all bids
+	nft.GET("/nft/bid", httpHandler.FindManyBids, s.middleware.JwtAuthorization)
+
 	// create bid
 	nft.POST("/nft/bid", httpHandler.CreateBid, s.middleware.JwtAuthorization)
 
@@ -103,9 +106,14 @@ func (s *server) nftService() {
 	// delete bid
 	nft.DELETE("/nft/bid/:bid_id", httpHandler.DeleteBid, s.middleware.JwtAuthorization)
 
+	// -------------------------------- Bidding User End Points -------------------------------- //
+
+	// Find all bids of a user
+	nft.GET("/nft/bidding", httpHandler.FindUserBids, s.middleware.JwtAuthorization)
+
 	// user bidding a NFT
-	nft.POST("/nft/bid/:nft_id", httpHandler.BidNft, s.middleware.JwtAuthorization)
+	nft.POST("/nft/bidding/", httpHandler.BidNft, s.middleware.JwtAuthorization)
 
 	// user withdraw a bid
-	nft.PATCH("/nft/bid/:bid_id/withdraw", httpHandler.WithdrawBid, s.middleware.JwtAuthorization)
+	nft.PATCH("/nft/bidding/:bid_id/withdraw", httpHandler.WithdrawBid, s.middleware.JwtAuthorization)
 }

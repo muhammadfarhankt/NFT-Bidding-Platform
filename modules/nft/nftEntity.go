@@ -37,10 +37,19 @@ type (
 	Bid struct {
 		Id         primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
 		NftId      primitive.ObjectID `json:"nft_id" bson:"nft_id"`
+		UserId     primitive.ObjectID `json:"user_id" bson:"user_id"`
 		Price      float64            `json:"price" bson:"price"`
 		ExpiryDate time.Time          `json:"expiry_date" bson:"expiry_date"`
 		IsDeleted  bool               `json:"is_deleted" bson:"is_deleted"`
 		CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
 		UpdatedAt  time.Time          `json:"updated_at" bson:"updated_at"`
+	}
+
+	SingleBid struct {
+		Id        primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
+		BidId     primitive.ObjectID `json:"bid_id" bson:"bid_id"`
+		UserId    primitive.ObjectID `json:"user_id" bson:"user_id"`
+		Price     float64            `json:"price" bson:"price"`
+		IsDeleted bool               `json:"is_deleted" bson:"is_deleted"`
 	}
 )

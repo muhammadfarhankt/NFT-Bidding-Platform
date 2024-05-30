@@ -73,4 +73,9 @@ type (
 		Price      float64   `json:"price" validate:"required"`
 		ExpiryDate time.Time `json:"expiry_date" validate:"required"`
 	}
+
+	CreateUserBidReq struct {
+		NftId string  `json:"nft_id" validate:"required"`
+		Price float64 `json:"price" validate:"required"`
+	}
 )

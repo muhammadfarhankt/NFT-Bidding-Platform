@@ -42,13 +42,15 @@ type (
 		DeleteFileFromGCP(req []*nft.DeleteFileReq) error
 
 		// -------------------- NFT Bidding Owner -------------------- //
+		FindManyBids(pctx context.Context, userId string) (any, error)
 		CreateBid(pctx context.Context, req *nft.CreateBidReq, userId string) (any, error)
-		// EditBid(pctx context.Context, bidId string, userId string, req *nft.CreateBidReq) (*nft.BidShowCase, error)
-		// DeleteBid(pctx context.Context, bidId string, userId string) (bool, error)
+		EditBid(pctx context.Context, bidId string, userId string, req *nft.CreateBidReq) (*nft.Bid, error)
+		DeleteBid(pctx context.Context, bidId string, userId string) error
 
 		// -------------------- NFT Bidding User -------------------- //
-		// BidNft(pctx context.Context, nftId string, userId string) (any, error)
-		// WithdrawBid(pctx context.Context, bidId string, userId string) (bool, error)
+		FindUserBids(pctx context.Context, userId string) (any, error)
+		BidNft(pctx context.Context, nftId string, userId string, price string) (any, error)
+		WithdrawBid(pctx context.Context, bidId string, userId string) error
 	}
 
 	nftUsecase struct {
@@ -318,43 +320,5 @@ func (u *nftUsecase) FindNftsInIds(pctx context.Context, req *nftPb.FindNftsInId
 
 	return &nftPb.FindNftsInIdsRes{
 		Nfts: resultsToRes,
-	}, nil
-}
-
-func (u *nftUsecase) CreateBid(pctx context.Context, req *nft.CreateBidReq, userId string) (any, error) {
-
-	nftId := strings.TrimPrefix(req.NftId, "nft:")
-	// check nft exist
-	_, err := u.nftRepository.FindOneNft(pctx, nftId)
-	if err != nil {
-		return nil, errors.New("error: nft not found")
-	}
-
-	// check bid exist
-	// bidResult, err := u.nftRepository.FindOneBid(pctx, nftId, userId)
-	// if err != nil {
-	// 	return nil, errors.New("error: bid not found")
-	// }
-
-	// if bidResult != nil {
-	// 	return nil, errors.New("error: you have already bid this nft")
-	// }
-
-	bidId, err := u.nftRepository.CreateBid(pctx, &nft.Bid{
-		NftId:      utils.ConvertToObjectId(nftId),
-		Price:      req.Price,
-		ExpiryDate: req.ExpiryDate,
-		IsDeleted:  false,
-		CreatedAt:  utils.LocalTime(),
-		UpdatedAt:  utils.LocalTime(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &nft.BidShowCase{
-		BidId: "bid:" + bidId.Hex(),
-		NftId: "nft:" + nftId,
-		Price: req.Price,
 	}, nil
 }

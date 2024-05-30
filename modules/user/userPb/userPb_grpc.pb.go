@@ -25,6 +25,8 @@ const (
 	UserGrpcService_FindOneUserProfileToRefresh_FullMethodName = "/UserGrpcService/FindOneUserProfileToRefresh"
 	UserGrpcService_GetUserWalletAccount_FullMethodName        = "/UserGrpcService/GetUserWalletAccount"
 	UserGrpcService_FindOneUserProfile_FullMethodName          = "/UserGrpcService/FindOneUserProfile"
+	UserGrpcService_DeductWalletAmount_FullMethodName          = "/UserGrpcService/DeductWalletAmount"
+	UserGrpcService_AddWalletAmount_FullMethodName             = "/UserGrpcService/AddWalletAmount"
 )
 
 // UserGrpcServiceClient is the client API for UserGrpcService service.
@@ -35,6 +37,8 @@ type UserGrpcServiceClient interface {
 	FindOneUserProfileToRefresh(ctx context.Context, in *FindOneUserProfileToRefreshReq, opts ...grpc.CallOption) (*UserProfile, error)
 	GetUserWalletAccount(ctx context.Context, in *GetUserWalletAccountReq, opts ...grpc.CallOption) (*GetUserWalletAccountRes, error)
 	FindOneUserProfile(ctx context.Context, in *EmailSearchReq, opts ...grpc.CallOption) (*UserProfile, error)
+	DeductWalletAmount(ctx context.Context, in *DeductWalletAmountReq, opts ...grpc.CallOption) (*GetUserWalletAccountRes, error)
+	AddWalletAmount(ctx context.Context, in *AddWalletAmountReq, opts ...grpc.CallOption) (*GetUserWalletAccountRes, error)
 }
 
 type userGrpcServiceClient struct {
@@ -81,6 +85,24 @@ func (c *userGrpcServiceClient) FindOneUserProfile(ctx context.Context, in *Emai
 	return out, nil
 }
 
+func (c *userGrpcServiceClient) DeductWalletAmount(ctx context.Context, in *DeductWalletAmountReq, opts ...grpc.CallOption) (*GetUserWalletAccountRes, error) {
+	out := new(GetUserWalletAccountRes)
+	err := c.cc.Invoke(ctx, UserGrpcService_DeductWalletAmount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userGrpcServiceClient) AddWalletAmount(ctx context.Context, in *AddWalletAmountReq, opts ...grpc.CallOption) (*GetUserWalletAccountRes, error) {
+	out := new(GetUserWalletAccountRes)
+	err := c.cc.Invoke(ctx, UserGrpcService_AddWalletAmount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserGrpcServiceServer is the server API for UserGrpcService service.
 // All implementations must embed UnimplementedUserGrpcServiceServer
 // for forward compatibility
@@ -89,6 +111,8 @@ type UserGrpcServiceServer interface {
 	FindOneUserProfileToRefresh(context.Context, *FindOneUserProfileToRefreshReq) (*UserProfile, error)
 	GetUserWalletAccount(context.Context, *GetUserWalletAccountReq) (*GetUserWalletAccountRes, error)
 	FindOneUserProfile(context.Context, *EmailSearchReq) (*UserProfile, error)
+	DeductWalletAmount(context.Context, *DeductWalletAmountReq) (*GetUserWalletAccountRes, error)
+	AddWalletAmount(context.Context, *AddWalletAmountReq) (*GetUserWalletAccountRes, error)
 	mustEmbedUnimplementedUserGrpcServiceServer()
 }
 
@@ -107,6 +131,12 @@ func (UnimplementedUserGrpcServiceServer) GetUserWalletAccount(context.Context, 
 }
 func (UnimplementedUserGrpcServiceServer) FindOneUserProfile(context.Context, *EmailSearchReq) (*UserProfile, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindOneUserProfile not implemented")
+}
+func (UnimplementedUserGrpcServiceServer) DeductWalletAmount(context.Context, *DeductWalletAmountReq) (*GetUserWalletAccountRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeductWalletAmount not implemented")
+}
+func (UnimplementedUserGrpcServiceServer) AddWalletAmount(context.Context, *AddWalletAmountReq) (*GetUserWalletAccountRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddWalletAmount not implemented")
 }
 func (UnimplementedUserGrpcServiceServer) mustEmbedUnimplementedUserGrpcServiceServer() {}
 
@@ -193,6 +223,42 @@ func _UserGrpcService_FindOneUserProfile_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserGrpcService_DeductWalletAmount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeductWalletAmountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserGrpcServiceServer).DeductWalletAmount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserGrpcService_DeductWalletAmount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserGrpcServiceServer).DeductWalletAmount(ctx, req.(*DeductWalletAmountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserGrpcService_AddWalletAmount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddWalletAmountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserGrpcServiceServer).AddWalletAmount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserGrpcService_AddWalletAmount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserGrpcServiceServer).AddWalletAmount(ctx, req.(*AddWalletAmountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserGrpcService_ServiceDesc is the grpc.ServiceDesc for UserGrpcService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -215,6 +281,14 @@ var UserGrpcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindOneUserProfile",
 			Handler:    _UserGrpcService_FindOneUserProfile_Handler,
+		},
+		{
+			MethodName: "DeductWalletAmount",
+			Handler:    _UserGrpcService_DeductWalletAmount_Handler,
+		},
+		{
+			MethodName: "AddWalletAmount",
+			Handler:    _UserGrpcService_AddWalletAmount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

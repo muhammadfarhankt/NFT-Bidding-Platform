@@ -21,14 +21,16 @@ type (
 		FindOneUserProfile(pctx context.Context, userId string) (*user.UserProfile, error)
 
 		AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq, orderId string) (*user.UserWalletAccount, error)
-		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
+		GetUserWalletAccount(pctx context.Context, userId string) (*userPb.GetUserWalletAccountRes, error)
 		UpdateUserTransaction(pctx context.Context, orderId, paymentId string) error
 
 		FindOneEmail(pctx context.Context, password, email string) (*userPb.UserProfile, error)
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*userPb.UserProfile, error)
 		FindOneUserOnEmail(pctx context.Context, email string) (*userPb.UserProfile, error)
 
+		// --- admin ----
 		BlockOrUnblockUser(pctx context.Context, userId string) (bool, error)
+		SalesReport(pctx context.Context) (any, error)
 
 		// Wish List
 		AddToWishList(pctx context.Context, userId, nftId string) (any, error)
@@ -40,6 +42,10 @@ type (
 		GetAddress(pctx context.Context, userId string) (*[]user.AddressModel, error)
 		UpdateAddress(pctx context.Context, userId string, address_id string, req *user.CreateUserAddressReq) (*user.AddressModel, error)
 		DeleteAddress(pctx context.Context, userId, addressId string) error
+
+		// Bidding wallet amount deduction and refund
+		AddWalletAmount(pctx context.Context, userId string, amount float64) (*userPb.GetUserWalletAccountRes, error)
+		DeductWalletAmount(pctx context.Context, userId string, amount float64) (*userPb.GetUserWalletAccountRes, error)
 	}
 
 	userUsecase struct {
@@ -99,6 +105,8 @@ func (u *userUsecase) FindOneUserProfile(pctx context.Context, userId string) (*
 
 	loc, _ := time.LoadLocation("Asia/Calcutta")
 
+	fmt.Println("result findOneUserProfile : \n", result)
+
 	return &user.UserProfile{
 		Id:           result.Id.Hex(),
 		Email:        result.Email,
@@ -128,8 +136,19 @@ func (u *userUsecase) AddToWallet(pctx context.Context, req *user.CreateUserTran
 	return u.userRepository.GetUserWalletAccount(pctx, req.UserId)
 }
 
-func (u *userUsecase) GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error) {
-	return u.userRepository.GetUserWalletAccount(pctx, userId)
+func (u *userUsecase) GetUserWalletAccount(pctx context.Context, userId string) (*userPb.GetUserWalletAccountRes, error) {
+
+	result, err := u.userRepository.GetUserWalletAccount(pctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userPb.GetUserWalletAccountRes{
+		Balance: result.Balance,
+		UserId:  result.UserId,
+	}, nil
+
+	// return u.userRepository.GetUserWalletAccount(pctx, userId)
 }
 
 func (u *userUsecase) FindOneEmail(pctx context.Context, password, email string) (*userPb.UserProfile, error) {
@@ -333,4 +352,35 @@ func (u *userUsecase) FindOneUserOnEmail(pctx context.Context, email string) (*u
 		CreatedAt: result.CreatedAt.In(loc).String(),
 		UpdatedAt: result.UpdatedAt.In(loc).String(),
 	}, nil
+}
+
+func (u *userUsecase) AddWalletAmount(pctx context.Context, userId string, amount float64) (*userPb.GetUserWalletAccountRes, error) {
+
+	result, err := u.userRepository.AddWalletAmount(pctx, userId, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userPb.GetUserWalletAccountRes{
+		Balance: result.Balance,
+		UserId:  result.UserId,
+	}, nil
+}
+
+func (u *userUsecase) DeductWalletAmount(pctx context.Context, userId string, amount float64) (*userPb.GetUserWalletAccountRes, error) {
+
+	result, err := u.userRepository.DeductWalletAmount(pctx, userId, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userPb.GetUserWalletAccountRes{
+		Balance: result.Balance,
+		UserId:  result.UserId,
+	}, nil
+
+}
+
+func (u *userUsecase) SalesReport(pctx context.Context) (any, error) {
+	return u.userRepository.SalesReport(pctx)
 }
