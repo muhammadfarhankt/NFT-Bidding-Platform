@@ -39,4 +39,9 @@ type (
 		State   string `json:"state" form:"state" validate:"required,max=255"`
 		Country string `json:"country" form:"country" validate:"required,max=255"`
 	}
+
+	ResetPasswordReq struct {
+		OldPassword string `json:"old_password" form:"old_password" validate:"required,max=32"`
+		NewPassword string `json:"new_password" form:"new_password" validate:"required,max=32"`
+	}
 )

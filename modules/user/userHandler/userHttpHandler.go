@@ -27,6 +27,7 @@ type (
 	UserHttpHandlerService interface {
 		InsertUser(c echo.Context) error
 		FindOneUserProfile(c echo.Context) error
+		ResetPassword(c echo.Context) error
 
 		// --- Wallet ---
 		AddToWallet(c echo.Context) error
@@ -441,4 +442,29 @@ func (h *userHttpHandler) SalesReport(c echo.Context) error {
 	}
 
 	return response.SuccessResponse(c, http.StatusOK, res)
+}
+
+func (h *userHttpHandler) ResetPassword(c echo.Context) error {
+	ctx := context.Background()
+
+	wrapper := request.ContextWrapper(c)
+
+	req := new(user.ResetPasswordReq)
+
+	if err := wrapper.Bind(req); err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
+
+	if userId == "" {
+		return response.ErrResponse(c, http.StatusBadRequest, "userId cannot be empty")
+	}
+
+	err := h.userUsecase.ResetPassword(ctx, userId, req)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, "Reset password successfully")
 }

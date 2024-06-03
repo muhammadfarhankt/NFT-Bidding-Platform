@@ -42,6 +42,10 @@ func (s *server) userService() {
 
 	user.GET("/user", httpHandler.FindOneUserProfile, s.middleware.JwtAuthorization)
 
+	// reset password using old password
+	user.PATCH("/user/reset-password", httpHandler.ResetPassword, s.middleware.JwtAuthorization)
+
+	// ----------------- USER Payment & Wallet ----------------- //
 	// user.POST("/user/add-wallet-money/:user_id", httpHandler.AddToWallet)
 	user.POST("/user/add-wallet-money", httpHandler.AddToWallet, s.middleware.JwtAuthorization)
 

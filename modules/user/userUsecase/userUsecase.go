@@ -19,6 +19,7 @@ type (
 	UserUsecaseService interface {
 		InsertUser(pctx context.Context, req *user.CreateUserReq) (string, error)
 		FindOneUserProfile(pctx context.Context, userId string) (*user.UserProfile, error)
+		ResetPassword(pctx context.Context, userId string, req *user.ResetPasswordReq) error
 
 		AddToWallet(pctx context.Context, req *user.CreateUserTransactionReq, orderId string) (*user.UserWalletAccount, error)
 		GetUserWalletAccount(pctx context.Context, userId string) (*userPb.GetUserWalletAccountRes, error)
@@ -383,4 +384,19 @@ func (u *userUsecase) DeductWalletAmount(pctx context.Context, userId string, am
 
 func (u *userUsecase) SalesReport(pctx context.Context) (any, error) {
 	return u.userRepository.SalesReport(pctx)
+}
+
+func (u *userUsecase) ResetPassword(pctx context.Context, userId string, req *user.ResetPasswordReq) error {
+
+	// hashing password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 7)
+	if err != nil {
+		return errors.New("error: Failed to hash password")
+	}
+
+	if err := u.userRepository.ResetPassword(pctx, userId, req.OldPassword, string(hashedPassword)); err != nil {
+		return err
+	}
+
+	return nil
 }

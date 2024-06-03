@@ -13,6 +13,7 @@ import (
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/grpcConn"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/jwtAuth"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/utils"
+	"golang.org/x/crypto/bcrypt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -25,6 +26,7 @@ type (
 		IsUserExists(pctx context.Context, email, username string) bool
 		InsertUser(pctx context.Context, user *user.User) (primitive.ObjectID, error)
 		FindOneUserProfile(pctx context.Context, userId string) (*user.UserProfileBson, error)
+		ResetPassword(pctx context.Context, userId, oldPassword, newPassword string) error
 
 		AddToWallet(pctx context.Context, req *user.UserTransaction) error
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
@@ -747,3 +749,32 @@ func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
 // 	// return user transactions
 // 	return userTransactions, nil
 // }
+
+func (r *userRepository) ResetPassword(pctx context.Context, userId, oldPassword, newPassword string) error {
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("users")
+
+	// Check if old password is correct using bcrypt
+	user := new(user.User)
+	if err := col.FindOne(ctx, bson.M{"_id": utils.ConvertToObjectId(userId)}).Decode(user); err != nil {
+		log.Printf("Error: ResetPassword: %s", err.Error())
+		return errors.New("error: user not found")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		log.Printf("Error: ResetPassword: %s", err.Error())
+		return errors.New("error: old password is incorrect")
+	}
+
+	// Update password and set updated_at
+	update := bson.M{"$set": bson.M{"password": newPassword, "updated_at": utils.LocalTime()}}
+	if _, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(userId)}, update); err != nil {
+		log.Printf("Error: ResetPassword: %s", err.Error())
+		return errors.New("error: failed to reset password")
+	}
+
+	return nil
+}
