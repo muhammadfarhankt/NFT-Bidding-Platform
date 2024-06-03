@@ -9,13 +9,9 @@ import (
 	"time"
 
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft"
-	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/grpcConn"
-	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/jwtAuth"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	userPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user/userPb"
 )
 
 // ------------------- Bidding User Side ------------------- //
@@ -67,52 +63,52 @@ func (r *nftRepository) BidNft(pctx context.Context, userId, nftId, price string
 		return primitive.NilObjectID, errors.New("error: price conversion failed")
 	}
 
-	// check priceFloat is greater than bid price
+	// check priceFloat is greater than  or equal to bid price
 	if priceFloat < bid.Price {
-		log.Printf("Error: BidNft: %s", "price must be greater than bid price")
-		return primitive.NilObjectID, errors.New("error: price must be greater than bid price")
+		log.Printf("Error: BidNft: %s", "price must be greater than  or equal to bid price")
+		return primitive.NilObjectID, errors.New("error: price must be greater than or equal to bid price")
 	}
 
 	// check price is available in userWallet
 	// userWallet := new(user.UserWalletAccount)
 
-	req := &userPb.GetUserWalletAccountReq{
-		UserId: userId,
-	}
+	// req := &userPb.GetUserWalletAccountReq{
+	// 	UserId: userId,
+	// }
 
-	jwtAuth.SetApiKeyInContext(&ctx)
-	conn, err := grpcConn.NewGrpcClient("0.0.0.0:1923")
-	if err != nil {
-		log.Printf("Error: gRPC connection failed: %s", err.Error())
-		return primitive.NilObjectID, errors.New("error: gRPC connection failed")
-	}
+	// jwtAuth.SetApiKeyInContext(&ctx)
+	// conn, err := grpcConn.NewGrpcClient("0.0.0.0:1923")
+	// if err != nil {
+	// 	log.Printf("Error: gRPC connection failed: %s", err.Error())
+	// 	return primitive.NilObjectID, errors.New("error: gRPC connection failed")
+	// }
 
-	result, err := conn.User().GetUserWalletAccount(ctx, req)
-	if err != nil {
-		log.Printf("Error: GetUserWalletAccount failed: %s", err.Error())
-		return primitive.NilObjectID, errors.New("error: user wallet not found")
-	}
+	// result, err := conn.User().GetUserWalletAccount(ctx, req)
+	// if err != nil {
+	// 	log.Printf("Error: GetUserWalletAccount failed: %s", err.Error())
+	// 	return primitive.NilObjectID, errors.New("error: user wallet not found")
+	// }
 
-	// fmt.Println("result: ", result)
+	// // fmt.Println("result: ", result)
 
-	if result.Balance < priceFloat {
-		log.Printf("Error: BidNft: %s", "insufficient balance")
-		return primitive.NilObjectID, errors.New("error: insufficient balance")
-	}
+	// if result.Balance < priceFloat {
+	// 	log.Printf("Error: BidNft: %s", "insufficient balance")
+	// 	return primitive.NilObjectID, errors.New("error: insufficient balance")
+	// }
 
-	// deduct price from userWallet
-	deductReq := &userPb.DeductWalletAmountReq{
-		UserId: userId,
-		Amount: priceFloat,
-	}
+	// // deduct price from userWallet
+	// deductReq := &userPb.DeductWalletAmountReq{
+	// 	UserId: userId,
+	// 	Amount: priceFloat,
+	// }
 
-	deductResult, err := conn.User().DeductWalletAmount(ctx, deductReq)
-	if err != nil {
-		log.Printf("Error: DeductWalletAmount failed: %s", err.Error())
-		return primitive.NilObjectID, errors.New("error: deduct wallet amount failed")
-	}
+	// deductResult, err := conn.User().DeductWalletAmount(ctx, deductReq)
+	// if err != nil {
+	// 	log.Printf("Error: DeductWalletAmount failed: %s", err.Error())
+	// 	return primitive.NilObjectID, errors.New("error: deduct wallet amount failed")
+	// }
 
-	fmt.Println("deductResult: ", deductResult)
+	// fmt.Println("deductResult: ", deductResult)
 
 	// insert user bid
 	userBid = &nft.SingleBid{
@@ -141,7 +137,7 @@ func (r *nftRepository) FindUserBids(pctx context.Context, userId string) (any, 
 	db := r.nftDbConn(ctx)
 	col := db.Collection("user_bids")
 
-	cursors, err := col.Find(ctx, bson.M{"user_id": utils.ConvertToObjectId(userId), "is_deleted": false})
+	cursors, err := col.Find(ctx, bson.M{"user_id": utils.ConvertToObjectId(userId)})
 	if err != nil {
 		log.Printf("Error: FindUserBids: %s", err.Error())
 		return nil, errors.New("error: find user bids failed")
@@ -156,9 +152,11 @@ func (r *nftRepository) FindUserBids(pctx context.Context, userId string) (any, 
 		}
 
 		results = append(results, bson.M{
-			"bid_id":  "bid:" + result.BidId.Hex(),
-			"user_id": "user:" + result.UserId.Hex(),
-			"price":   result.Price,
+			"_id":    result.Id.Hex(),
+			"bid_id": "bid:" + result.BidId.Hex(),
+			// "user_id": "user:" + result.UserId.Hex(),
+			"price":      result.Price,
+			"is_deleted": result.IsDeleted,
 		})
 	}
 
@@ -184,27 +182,33 @@ func (r *nftRepository) WithdrawBid(pctx context.Context, bidId string) error {
 		return errors.New("error: user bid not found")
 	}
 
-	// add the price to userWallet
-	req := &userPb.AddWalletAmountReq{
-		UserId: userBid.UserId.Hex(),
-		Amount: userBid.Price,
+	// check this user bid is already soft deleted
+	if err := col.FindOne(ctx, bson.M{"_id": utils.ConvertToObjectId(bidId), "is_deleted": true}).Decode(userBid); err == nil {
+		log.Printf("Error: WithdrawBid: %s", "user bid is already soft deleted")
+		return errors.New("error: user bid is already soft deleted")
 	}
 
-	jwtAuth.SetApiKeyInContext(&ctx)
-	conn, err := grpcConn.NewGrpcClient("0.0.0.0:1923")
+	// // add the price to userWallet
+	// req := &userPb.AddWalletAmountReq{
+	// 	UserId: userBid.UserId.Hex(),
+	// 	Amount: userBid.Price,
+	// }
 
-	if err != nil {
-		log.Printf("Error: gRPC connection failed: %s", err.Error())
-		return errors.New("error: gRPC connection failed")
-	}
+	// jwtAuth.SetApiKeyInContext(&ctx)
+	// conn, err := grpcConn.NewGrpcClient("0.0.0.0:1923")
 
-	addWalletRes, err := conn.User().AddWalletAmount(ctx, req)
-	if err != nil {
-		log.Printf("Error: AddWalletAmount failed: %s", err.Error())
-		return errors.New("error: add wallet amount failed")
-	}
+	// if err != nil {
+	// 	log.Printf("Error: gRPC connection failed: %s", err.Error())
+	// 	return errors.New("error: gRPC connection failed")
+	// }
 
-	fmt.Println("addWalletRes: ", addWalletRes)
+	// addWalletRes, err := conn.User().AddWalletAmount(ctx, req)
+	// if err != nil {
+	// 	log.Printf("Error: AddWalletAmount failed: %s", err.Error())
+	// 	return errors.New("error: add wallet amount failed")
+	// }
+
+	// fmt.Println("addWalletRes: ", addWalletRes)
 
 	// delete the user bid
 

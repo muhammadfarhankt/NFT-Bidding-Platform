@@ -183,14 +183,14 @@ func (h *nftHttpHandler) BidNft(c echo.Context) error {
 	if nftId == "" {
 		return response.ErrResponse(c, http.StatusBadRequest, "nft_id is required")
 	}
-	fmt.Println("nft id: ", nftId)
+	// fmt.Println("nft id: ", nftId)
 
 	// get price from request and convert it to string
 	if req.Price <= 0 {
 		return response.ErrResponse(c, http.StatusBadRequest, "price must be greater than 0")
 	}
 	price := fmt.Sprintf("%f", req.Price)
-	fmt.Println("price: ", price)
+	// fmt.Println("price: ", price)
 
 	result, err := h.nftUsecase.BidNft(ctx, nftId, userId, price)
 	if err != nil {
