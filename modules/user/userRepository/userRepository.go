@@ -148,11 +148,12 @@ func (r *userRepository) AddToWallet(pctx context.Context, req *user.UserTransac
 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
 	defer cancel()
 
+	fmt.Println("AddToWallet function")
 	db := r.userDbConn(ctx)
 	col := db.Collection("user_transactions")
-	colUser := db.Collection("users")
+	// colUser := db.Collection("users")
 	userId := req.UserId
-	userIdTrim := strings.TrimPrefix(userId, "user:")
+	// userIdTrim := strings.TrimPrefix(userId, "user:")
 
 	result, err := col.InsertOne(ctx, req)
 	if err != nil {
@@ -162,17 +163,22 @@ func (r *userRepository) AddToWallet(pctx context.Context, req *user.UserTransac
 	log.Printf("Result: AddToWallet: %v", result.InsertedID)
 
 	// Get user wallet account
-	userWallet, err := r.GetUserWalletAccount(ctx, userId)
-	// Update user wallet account in the database
-	_, err = colUser.UpdateOne(
-		ctx,
-		bson.M{"_id": utils.ConvertToObjectId(userIdTrim)},
-		bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance}},
-	)
+	_, err = r.GetUserWalletAccount(ctx, userId)
 	if err != nil {
 		log.Printf("Error: AddToWallet: %s", err.Error())
-		return errors.New("error: failed to update user wallet account")
+		return errors.New("error: failed to get user wallet account")
 	}
+
+	// Update user wallet account in the database
+	// _, err = colUser.UpdateOne(
+	// 	ctx,
+	// 	bson.M{"_id": utils.ConvertToObjectId(userIdTrim)},
+	// 	bson.M{"$set": bson.M{"wallet_amount": userWallet.Balance}},
+	// )
+	// if err != nil {
+	// 	log.Printf("Error: AddToWallet: %s", err.Error())
+	// 	return errors.New("error: failed to update user wallet account")
+	// }
 
 	return nil
 }
@@ -628,11 +634,15 @@ func (r *userRepository) UpdateUserTransaction(pctx context.Context, orderId, pa
 		return errors.New("error: failed to update order success")
 	}
 
-	// add amount to user wallet
-	_, err := r.GetUserWalletAccount(ctx, user.UserId)
+	// fmt.Println("add money to wallet after ordre succes \n user: ", user)
+	// add money to wallet account
+	userIdTrim := strings.TrimPrefix(user.UserId, "user:")
+	// fmt.Println("userIdTrim: ", userIdTrim)
+	// fmt.Println("user.UserId", user.UserId)
+	_, err := r.AddWalletAmount(ctx, userIdTrim, user.Amount)
 	if err != nil {
 		log.Printf("Error: UpdateUserTransaction: %s", err.Error())
-		return errors.New("error: failed to get user wallet account")
+		return errors.New("error: failed to add money to wallet account")
 	}
 
 	return nil
@@ -678,6 +688,7 @@ func (r *userRepository) AddWalletAmount(pctx context.Context, userId string, am
 	db := r.userDbConn(ctx)
 	col := db.Collection("users")
 
+	// fmt.Println("AddWalletAmount function")
 	// Get user wallet account
 	userWallet, err := r.GetUserWalletAccount(ctx, userId)
 	if err != nil {
