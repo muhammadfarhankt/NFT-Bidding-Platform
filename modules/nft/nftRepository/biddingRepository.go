@@ -64,8 +64,8 @@ func (r *nftRepository) BidNft(pctx context.Context, userId, nftId, price string
 	}
 
 	// check priceFloat is greater than  or equal to bid price
-	if priceFloat < bid.Price {
-		log.Printf("Error: BidNft: %s", "price must be greater than  or equal to bid price")
+	if priceFloat <= bid.Price {
+		log.Printf("Error: BidNft: %s", "price must be greater than or equal to bid price")
 		return primitive.NilObjectID, errors.New("error: price must be greater than or equal to bid price")
 	}
 

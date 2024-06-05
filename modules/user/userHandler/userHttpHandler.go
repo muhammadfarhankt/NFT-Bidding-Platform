@@ -37,6 +37,10 @@ type (
 		RazorPayLoad(c echo.Context) error
 		RazorPaymentConfirm(c echo.Context) error
 
+		// --- Reports ---
+		UserPaymentReport(c echo.Context) error
+		SingleOrderPaymentReport(c echo.Context) error
+
 		// --- Wish List ---
 		AddToWishList(c echo.Context) error
 		GetWishList(c echo.Context) error
@@ -467,4 +471,38 @@ func (h *userHttpHandler) ResetPassword(c echo.Context) error {
 	}
 
 	return response.SuccessResponse(c, http.StatusOK, "Reset password successfully")
+}
+
+func (h *userHttpHandler) UserPaymentReport(c echo.Context) error {
+	ctx := context.Background()
+
+	userId := strings.TrimPrefix(c.Get("user_id").(string), "user:")
+
+	if userId == "" {
+		return response.ErrResponse(c, http.StatusBadRequest, "userId cannot be empty")
+	}
+
+	res, err := h.userUsecase.UserPaymentReport(ctx, userId)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
+}
+
+func (h *userHttpHandler) SingleOrderPaymentReport(c echo.Context) error {
+	ctx := context.Background()
+
+	userId := c.Get("user_id").(string)
+
+	if userId == "" {
+		return response.ErrResponse(c, http.StatusBadRequest, "userId cannot be empty")
+	}
+
+	res, err := h.userUsecase.SingleOrderPaymentReport(ctx, userId)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
 }

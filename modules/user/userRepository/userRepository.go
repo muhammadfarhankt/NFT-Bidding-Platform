@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jung-kurt/gofpdf"
 	nftPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft/nftPb"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/grpcConn"
@@ -50,6 +51,10 @@ type (
 		GetAddress(pctx context.Context, userId string) (*[]user.AddressModel, error)
 		UpdateAddress(pctx context.Context, userId string, address_id string, req *user.CreateUserAddressReq) (*user.AddressModel, error)
 		DeleteAddress(pctx context.Context, userId, addressId string) error
+
+		// ----- Reports -----
+		UserPaymentReport(pctx context.Context, userId string) (any, error)
+		SingleOrderPaymentReport(pctx context.Context, userId string) (any, error)
 
 		// admin
 		SalesReport(pctx context.Context) (any, error)
@@ -710,56 +715,87 @@ func (r *userRepository) AddWalletAmount(pctx context.Context, userId string, am
 	}, nil
 }
 
+// Sales Report
+
 func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
-	return nil, nil
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("user_transactions")
+
+	// Get all user transactions
+	cursor, err := col.Find(ctx, bson.M{})
+	if err != nil {
+		log.Printf("Error: SalesReport: %s", err.Error())
+		return nil, errors.New("error: failed to get user transactions")
+	}
+
+	var userTransactions []*user.UserTransaction
+	if err := cursor.All(ctx, &userTransactions); err != nil {
+		log.Printf("Error: SalesReport: %s", err.Error())
+		return nil, errors.New("error: failed to get user transactions")
+	}
+
+	//================== Creating  new PDF document ========================
+	pdf := gofpdf.New("L", "mm", "A4", "")
+	pdf.AddPage()
+
+	//================== Add headers to the PDF ============================
+
+	// heading of the table in the middle
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(95, 10, "")
+	pdf.Cell(75, 10, "User Transactions Report")
+	pdf.Ln(10)
+
+	pdf.SetFont("Arial", "", 12)
+
+	pdf.Cell(12, 10, "Sl No")
+	pdf.Cell(60, 10, "User ID")
+	pdf.Cell(60, 10, "Address ID")
+	pdf.Cell(50, 10, "Order ID")
+	pdf.Cell(50, 10, "Date")
+	pdf.Cell(20, 10, "Amount")
+	pdf.Cell(20, 10, "Status")
+	pdf.Ln(-1)
+
+	//================== Add data to the PDF ============================
+	for i, transaction := range userTransactions {
+		pdf.Cell(12, 10, fmt.Sprintf("%d", i+1))
+		userIdTrim := strings.TrimPrefix(transaction.UserId, "user:")
+		pdf.Cell(60, 10, userIdTrim)
+		pdf.Cell(60, 10, transaction.AddressId)
+		pdf.Cell(50, 10, transaction.OrderId)
+		pdf.Cell(50, 10, transaction.CreatedAt.Format("2006-01-02 15:04:05"))
+		amountInt := int(transaction.Amount)
+		pdf.Cell(20, 10, fmt.Sprintf("%d", amountInt))
+		if transaction.OrderSuccess != "" {
+			pdf.SetTextColor(0, 255, 0)
+			pdf.Cell(20, 10, "Success")
+			pdf.SetTextColor(0, 0, 0)
+		} else {
+			pdf.SetTextColor(255, 0, 0)
+			pdf.Cell(20, 10, "Failed")
+			pdf.SetTextColor(0, 0, 0)
+		}
+		pdf.Ln(-1)
+	}
+
+	// ================= Save the PDF ============================
+	// set path to downloads folder
+	filePath := "/Users/muhammadfarhankt/Downloads/"
+	fileName := "sales_report_" + time.Now().Format("2006-01-02_15-04-05") + ".pdf"
+
+	if err := pdf.OutputFileAndClose(filePath + fileName); err != nil {
+		log.Printf("Error: SalesReport: %s", err.Error())
+		return nil, errors.New("error: failed to save sales report")
+	}
+
+	// return path to the PDF
+	return "PDF file saved at: " + filePath + fileName, nil
+
 }
-
-// func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
-// 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
-// 	defer cancel()
-
-// 	db := r.userDbConn(ctx)
-// 	col := db.Collection("user_transactions")
-
-// 	// Get all user transactions
-// 	cursor, err := col.Find(ctx, bson.M{})
-// 	if err != nil {
-// 		log.Printf("Error: SalesReport: %s", err.Error())
-// 		return nil, errors.New("error: failed to get user transactions")
-// 	}
-
-// 	var userTransactions []*user.UserTransaction
-// 	if err := cursor.All(ctx, &userTransactions); err != nil {
-// 		log.Printf("Error: SalesReport: %s", err.Error())
-// 		return nil, errors.New("error: failed to get user transactions")
-// 	}
-
-// 	//================== Creating  new PDF document ========================
-// 	pdf := gofpdf.New("P", "mm", "A4", "")
-// 	pdf.AddPage()
-
-// 	pdf.SetFont("Arial", "", 12)
-
-// 	//================== Add headers to the PDF ============================
-// 	headers := []string{"Sl No.", "Order ID", "Order Date", "Amount", "Order Status"}
-// 	for _, header := range headers {
-// 		pdf.Cell(40, 10, header)
-// 	}
-// 	pdf.Ln(-1)
-
-// 	//================== Add data to the PDF ============================
-// 	for i, transaction := range userTransactions {
-// 		pdf.Cell(40, 10, fmt.Sprintf("%d", i+1))
-// 		pdf.Cell(40, 10, transaction.OrderId)
-// 		pdf.Cell(40, 10, transaction.CreatedAt.Format("2006-01-02 15:04:05"))
-// 		pdf.Cell(40, 10, fmt.Sprintf("%f", transaction.Amount))
-// 		pdf.Cell(40, 10, transaction.OrderStatus)
-// 		pdf.Ln(-1)
-// 	}
-
-// 	// return user transactions
-// 	return userTransactions, nil
-// }
 
 func (r *userRepository) ResetPassword(pctx context.Context, userId, oldPassword, newPassword string) error {
 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
@@ -788,4 +824,94 @@ func (r *userRepository) ResetPassword(pctx context.Context, userId, oldPassword
 	}
 
 	return nil
+}
+
+func (r *userRepository) UserPaymentReport(pctx context.Context, userId string) (any, error) {
+
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("user_transactions")
+
+	fmt.Println("UserPaymentReport function")
+	fmt.Println("userId: ", userId)
+
+	// get user transactions
+	var userTransactions []*user.UserTransaction
+
+	cursor, err := col.Find(ctx, bson.M{"user_id": "user:" + userId})
+	if err != nil {
+		log.Printf("Error: UserPaymentReport: %s", err.Error())
+		return nil, errors.New("error: failed to get user transactions")
+	}
+
+	for cursor.Next(ctx) {
+		var userTransaction user.UserTransaction
+		if err := cursor.Decode(&userTransaction); err != nil {
+			log.Printf("Error: UserPaymentReport: %s", err.Error())
+			return nil, errors.New("error: failed to get user transactions")
+		}
+		userTransactions = append(userTransactions, &userTransaction)
+	}
+
+	//================== Creating  new PDF document ========================
+	pdf := gofpdf.New("L", "mm", "A4", "")
+	pdf.AddPage()
+
+	//================== Add headers to the PDF ============================
+
+	// heading of the table in the middle
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(95, 10, "")
+	pdf.Cell(75, 10, "User Transactions Report")
+	pdf.Ln(10)
+
+	pdf.SetFont("Arial", "", 12)
+
+	pdf.Cell(12, 10, "Sl No")
+	pdf.Cell(60, 10, "Address ID")
+	pdf.Cell(50, 10, "Order ID")
+	pdf.Cell(50, 10, "Date")
+	pdf.Cell(20, 10, "Amount")
+	pdf.Cell(20, 10, "Status")
+	pdf.Ln(-1)
+
+	//================== Add data to the PDF ============================
+	for i, transaction := range userTransactions {
+		pdf.Cell(12, 10, fmt.Sprintf("%d", i+1))
+		pdf.Cell(60, 10, transaction.AddressId)
+		pdf.Cell(50, 10, transaction.OrderId)
+		pdf.Cell(50, 10, transaction.CreatedAt.Format("2006-01-02 15:04:05"))
+		amountInt := int(transaction.Amount)
+		pdf.Cell(20, 10, fmt.Sprintf("%d", amountInt))
+		if transaction.OrderSuccess != "" {
+			pdf.SetTextColor(0, 255, 0)
+			pdf.Cell(20, 10, "Success")
+			pdf.SetTextColor(0, 0, 0)
+		} else {
+			pdf.SetTextColor(255, 0, 0)
+			pdf.Cell(20, 10, "Failed")
+			pdf.SetTextColor(0, 0, 0)
+		}
+		pdf.Ln(-1)
+	}
+
+	// ================= Save the PDF ============================
+	// set path to downloads folder
+	filePath := "/Users/muhammadfarhankt/Downloads/"
+	fileName := "sales_report_" + time.Now().Format("2006-01-02_15-04-05") + ".pdf"
+
+	if err := pdf.OutputFileAndClose(filePath + fileName); err != nil {
+		log.Printf("Error: SalesReport: %s", err.Error())
+		return nil, errors.New("error: failed to save sales report")
+	}
+
+	// return path to the PDF
+	return "PDF file saved at: " + filePath + fileName, nil
+
+}
+
+func (r *userRepository) SingleOrderPaymentReport(pctx context.Context, orderId string) (any, error) {
+	return nil, nil
 }

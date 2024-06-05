@@ -152,7 +152,7 @@ func (h *nftHttpHandler) WithdrawBid(c echo.Context) error {
 		return response.ErrResponse(c, http.StatusBadRequest, "bid_id is required")
 	}
 
-	fmt.Println("bid id: ", bidId)
+	// fmt.Println("bid id: ", bidId)
 
 	err := h.nftUsecase.WithdrawBid(ctx, bidId, userId)
 	if err != nil {

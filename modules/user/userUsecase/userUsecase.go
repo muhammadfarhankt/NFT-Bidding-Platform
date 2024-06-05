@@ -29,6 +29,10 @@ type (
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*userPb.UserProfile, error)
 		FindOneUserOnEmail(pctx context.Context, email string) (*userPb.UserProfile, error)
 
+		// ----- Reports -----
+		UserPaymentReport(pctx context.Context, userId string) (any, error)
+		SingleOrderPaymentReport(pctx context.Context, userId string) (any, error)
+
 		// --- admin ----
 		BlockOrUnblockUser(pctx context.Context, userId string) (bool, error)
 		SalesReport(pctx context.Context) (any, error)
@@ -399,4 +403,16 @@ func (u *userUsecase) ResetPassword(pctx context.Context, userId string, req *us
 	}
 
 	return nil
+}
+
+func (u *userUsecase) UserPaymentReport(pctx context.Context, userId string) (any, error) {
+
+	return u.userRepository.UserPaymentReport(pctx, userId)
+
+}
+
+func (u *userUsecase) SingleOrderPaymentReport(pctx context.Context, userId string) (any, error) {
+
+	return u.userRepository.SingleOrderPaymentReport(pctx, userId)
+
 }

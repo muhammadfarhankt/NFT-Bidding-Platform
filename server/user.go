@@ -66,6 +66,11 @@ func (s *server) userService() {
 	user.PATCH("/user/address/:address_id", httpHandler.UpdateAddress, s.middleware.JwtAuthorization)
 	user.DELETE("/user/address/:address_id", httpHandler.DeleteAddress, s.middleware.JwtAuthorization)
 
+	// ----------------- Payment Reports ----------------- //
+	user.GET("/user/payment-report-pdf", httpHandler.UserPaymentReport, s.middleware.JwtAuthorization)
+	// single order
+	user.GET("/user/payment-report-pdf/:order_id", httpHandler.SingleOrderPaymentReport, s.middleware.JwtAuthorization)
+
 	// ----------------- ADMIN ----------------- //
 
 	// block or unblock user
