@@ -440,7 +440,11 @@ func RazorPaymentVerification(sign, orderId, paymentId, secret string) error {
 func (h *userHttpHandler) SalesReport(c echo.Context) error {
 	ctx := context.Background()
 
-	res, err := h.userUsecase.SalesReport(ctx)
+	// get from date and to date from query params
+	fromDate := c.QueryParam("FromDate")
+	toDate := c.QueryParam("ToDate")
+
+	res, err := h.userUsecase.SalesReport(ctx, fromDate, toDate)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -482,7 +486,11 @@ func (h *userHttpHandler) UserPaymentReport(c echo.Context) error {
 		return response.ErrResponse(c, http.StatusBadRequest, "userId cannot be empty")
 	}
 
-	res, err := h.userUsecase.UserPaymentReport(ctx, userId)
+	// get from date and to date from query params
+	fromDate := c.QueryParam("FromDate")
+	toDate := c.QueryParam("ToDate")
+
+	res, err := h.userUsecase.UserPaymentReport(ctx, userId, fromDate, toDate)
 	if err != nil {
 		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
 	}

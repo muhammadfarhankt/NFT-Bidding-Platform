@@ -53,11 +53,11 @@ type (
 		DeleteAddress(pctx context.Context, userId, addressId string) error
 
 		// ----- Reports -----
-		UserPaymentReport(pctx context.Context, userId string) (any, error)
+		UserPaymentReport(pctx context.Context, userId, fromDate, toDate string) (any, error)
 		SingleOrderPaymentReport(pctx context.Context, userId string) (any, error)
 
 		// admin
-		SalesReport(pctx context.Context) (any, error)
+		SalesReport(pctx context.Context, fromDate, toDate string) (any, error)
 	}
 
 	userRepository struct {
@@ -734,24 +734,43 @@ func (r *userRepository) AddWalletAmount(pctx context.Context, userId string, am
 
 // Sales Report
 
-func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
+func (r *userRepository) SalesReport(pctx context.Context, fromDate, toDate string) (any, error) {
 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
 	defer cancel()
 
 	db := r.userDbConn(ctx)
 	col := db.Collection("user_transactions")
 
-	// Get all user transactions
-	cursor, err := col.Find(ctx, bson.M{})
-	if err != nil {
-		log.Printf("Error: SalesReport: %s", err.Error())
-		return nil, errors.New("error: failed to get user transactions")
-	}
-
 	var userTransactions []*user.UserTransaction
-	if err := cursor.All(ctx, &userTransactions); err != nil {
-		log.Printf("Error: SalesReport: %s", err.Error())
-		return nil, errors.New("error: failed to get user transactions")
+
+	if fromDate != "" && toDate != "" {
+		fmt.Println("fromDate: ", fromDate, "toDate: ", toDate)
+		// Get all user transactions between two dates
+		fromDateObj, _ := time.Parse("2006-01-02", fromDate)
+		toDateObj, _ := time.Parse("2006-01-02", toDate)
+		cursor, err := col.Find(ctx, bson.M{"created_at": bson.M{"$gte": fromDateObj, "$lte": toDateObj.Add(24 * time.Hour)}})
+		if err != nil {
+			log.Printf("Error: SalesReport: %s", err.Error())
+			return nil, errors.New("error: failed to get user transactions")
+		}
+
+		if err := cursor.All(ctx, &userTransactions); err != nil {
+			log.Printf("Error: SalesReport: %s", err.Error())
+			return nil, errors.New("error: failed to get user transactions")
+		}
+	} else {
+		fmt.Println("no date filter")
+		// Get all user transactions
+		cursor, err := col.Find(ctx, bson.M{})
+		if err != nil {
+			log.Printf("Error: SalesReport: %s", err.Error())
+			return nil, errors.New("error: failed to get user transactions")
+		}
+
+		if err := cursor.All(ctx, &userTransactions); err != nil {
+			log.Printf("Error: SalesReport: %s", err.Error())
+			return nil, errors.New("error: failed to get user transactions")
+		}
 	}
 
 	//================== Creating  new PDF document ========================
@@ -802,7 +821,7 @@ func (r *userRepository) SalesReport(pctx context.Context) (any, error) {
 	// ================= Save the PDF ============================
 	// set path to downloads folder
 	filePath := "/Users/muhammadfarhankt/Downloads/"
-	fileName := "sales_report_" + time.Now().Format("2006-01-02_15-04-05") + ".pdf"
+	fileName := "admin_sales_report_" + time.Now().Format("2006-01-02_15-04-05") + ".pdf"
 
 	if err := pdf.OutputFileAndClose(filePath + fileName); err != nil {
 		log.Printf("Error: SalesReport: %s", err.Error())
@@ -843,7 +862,7 @@ func (r *userRepository) ResetPassword(pctx context.Context, userId, oldPassword
 	return nil
 }
 
-func (r *userRepository) UserPaymentReport(pctx context.Context, userId string) (any, error) {
+func (r *userRepository) UserPaymentReport(pctx context.Context, userId, fromDate, toDate string) (any, error) {
 
 	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
 	defer cancel()
@@ -857,19 +876,42 @@ func (r *userRepository) UserPaymentReport(pctx context.Context, userId string) 
 	// get user transactions
 	var userTransactions []*user.UserTransaction
 
-	cursor, err := col.Find(ctx, bson.M{"user_id": "user:" + userId})
-	if err != nil {
-		log.Printf("Error: UserPaymentReport: %s", err.Error())
-		return nil, errors.New("error: failed to get user transactions")
-	}
-
-	for cursor.Next(ctx) {
-		var userTransaction user.UserTransaction
-		if err := cursor.Decode(&userTransaction); err != nil {
+	// add from and to date filtering
+	if fromDate != "" && toDate != "" {
+		fmt.Println("fromDate: ", fromDate)
+		fmt.Println("toDate: ", toDate)
+		fromDateObj, _ := time.Parse("2006-01-02", fromDate)
+		toDateObj, _ := time.Parse("2006-01-02", toDate)
+		filter := bson.M{"user_id": "user:" + userId, "created_at": bson.M{"$gte": fromDateObj, "$lte": toDateObj.Add(24 * time.Hour)}}
+		cursor, err := col.Find(ctx, filter)
+		if err != nil {
 			log.Printf("Error: UserPaymentReport: %s", err.Error())
 			return nil, errors.New("error: failed to get user transactions")
 		}
-		userTransactions = append(userTransactions, &userTransaction)
+		for cursor.Next(ctx) {
+			var userTransaction user.UserTransaction
+			if err := cursor.Decode(&userTransaction); err != nil {
+				log.Printf("Error: UserPaymentReport: %s", err.Error())
+				return nil, errors.New("error: failed to get user transactions")
+			}
+			userTransactions = append(userTransactions, &userTransaction)
+		}
+	} else {
+		fmt.Println("no date filter")
+		cursor, err := col.Find(ctx, bson.M{"user_id": "user:" + userId})
+		if err != nil {
+			log.Printf("Error: UserPaymentReport: %s", err.Error())
+			return nil, errors.New("error: failed to get user transactions")
+		}
+
+		for cursor.Next(ctx) {
+			var userTransaction user.UserTransaction
+			if err := cursor.Decode(&userTransaction); err != nil {
+				log.Printf("Error: UserPaymentReport: %s", err.Error())
+				return nil, errors.New("error: failed to get user transactions")
+			}
+			userTransactions = append(userTransactions, &userTransaction)
+		}
 	}
 
 	//================== Creating  new PDF document ========================
@@ -917,7 +959,7 @@ func (r *userRepository) UserPaymentReport(pctx context.Context, userId string) 
 	// ================= Save the PDF ============================
 	// set path to downloads folder
 	filePath := "/Users/muhammadfarhankt/Downloads/"
-	fileName := "sales_report_" + time.Now().Format("2006-01-02_15-04-05") + ".pdf"
+	fileName := "user_sales_report_" + time.Now().Format("2006-01-02_15-04-05") + ".pdf"
 
 	if err := pdf.OutputFileAndClose(filePath + fileName); err != nil {
 		log.Printf("Error: SalesReport: %s", err.Error())

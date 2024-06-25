@@ -30,12 +30,12 @@ type (
 		FindOneUserOnEmail(pctx context.Context, email string) (*userPb.UserProfile, error)
 
 		// ----- Reports -----
-		UserPaymentReport(pctx context.Context, userId string) (any, error)
+		UserPaymentReport(pctx context.Context, userId, fromDate, toDate string) (any, error)
 		SingleOrderPaymentReport(pctx context.Context, userId string) (any, error)
 
 		// --- admin ----
 		BlockOrUnblockUser(pctx context.Context, userId string) (bool, error)
-		SalesReport(pctx context.Context) (any, error)
+		SalesReport(pctx context.Context, fromDate, toDate string) (any, error)
 
 		// Wish List
 		AddToWishList(pctx context.Context, userId, nftId string) (any, error)
@@ -386,8 +386,8 @@ func (u *userUsecase) DeductWalletAmount(pctx context.Context, userId string, am
 
 }
 
-func (u *userUsecase) SalesReport(pctx context.Context) (any, error) {
-	return u.userRepository.SalesReport(pctx)
+func (u *userUsecase) SalesReport(pctx context.Context, fromDate, toDate string) (any, error) {
+	return u.userRepository.SalesReport(pctx, fromDate, toDate)
 }
 
 func (u *userUsecase) ResetPassword(pctx context.Context, userId string, req *user.ResetPasswordReq) error {
@@ -405,9 +405,9 @@ func (u *userUsecase) ResetPassword(pctx context.Context, userId string, req *us
 	return nil
 }
 
-func (u *userUsecase) UserPaymentReport(pctx context.Context, userId string) (any, error) {
+func (u *userUsecase) UserPaymentReport(pctx context.Context, userId, fromDate, toDate string) (any, error) {
 
-	return u.userRepository.UserPaymentReport(pctx, userId)
+	return u.userRepository.UserPaymentReport(pctx, userId, fromDate, toDate)
 
 }
 
