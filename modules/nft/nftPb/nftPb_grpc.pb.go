@@ -21,7 +21,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	NftGrpcService_FindNftsInIds_FullMethodName = "/NftGrpcService/FindNftsInIds"
+	NftGrpcService_FindNftsInIds_FullMethodName  = "/NftGrpcService/FindNftsInIds"
+	NftGrpcService_AddNftWishlist_FullMethodName = "/NftGrpcService/AddNftWishlist"
 )
 
 // NftGrpcServiceClient is the client API for NftGrpcService service.
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NftGrpcServiceClient interface {
 	FindNftsInIds(ctx context.Context, in *FindNftsInIdsReq, opts ...grpc.CallOption) (*FindNftsInIdsRes, error)
+	AddNftWishlist(ctx context.Context, in *AddNftWishlistReq, opts ...grpc.CallOption) (*AddNftWishlistRes, error)
 }
 
 type nftGrpcServiceClient struct {
@@ -48,11 +50,21 @@ func (c *nftGrpcServiceClient) FindNftsInIds(ctx context.Context, in *FindNftsIn
 	return out, nil
 }
 
+func (c *nftGrpcServiceClient) AddNftWishlist(ctx context.Context, in *AddNftWishlistReq, opts ...grpc.CallOption) (*AddNftWishlistRes, error) {
+	out := new(AddNftWishlistRes)
+	err := c.cc.Invoke(ctx, NftGrpcService_AddNftWishlist_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NftGrpcServiceServer is the server API for NftGrpcService service.
 // All implementations must embed UnimplementedNftGrpcServiceServer
 // for forward compatibility
 type NftGrpcServiceServer interface {
 	FindNftsInIds(context.Context, *FindNftsInIdsReq) (*FindNftsInIdsRes, error)
+	AddNftWishlist(context.Context, *AddNftWishlistReq) (*AddNftWishlistRes, error)
 	mustEmbedUnimplementedNftGrpcServiceServer()
 }
 
@@ -62,6 +74,9 @@ type UnimplementedNftGrpcServiceServer struct {
 
 func (UnimplementedNftGrpcServiceServer) FindNftsInIds(context.Context, *FindNftsInIdsReq) (*FindNftsInIdsRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindNftsInIds not implemented")
+}
+func (UnimplementedNftGrpcServiceServer) AddNftWishlist(context.Context, *AddNftWishlistReq) (*AddNftWishlistRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddNftWishlist not implemented")
 }
 func (UnimplementedNftGrpcServiceServer) mustEmbedUnimplementedNftGrpcServiceServer() {}
 
@@ -94,6 +109,24 @@ func _NftGrpcService_FindNftsInIds_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NftGrpcService_AddNftWishlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddNftWishlistReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NftGrpcServiceServer).AddNftWishlist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NftGrpcService_AddNftWishlist_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NftGrpcServiceServer).AddNftWishlist(ctx, req.(*AddNftWishlistReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NftGrpcService_ServiceDesc is the grpc.ServiceDesc for NftGrpcService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,6 +137,10 @@ var NftGrpcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindNftsInIds",
 			Handler:    _NftGrpcService_FindNftsInIds_Handler,
+		},
+		{
+			MethodName: "AddNftWishlist",
+			Handler:    _NftGrpcService_AddNftWishlist_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

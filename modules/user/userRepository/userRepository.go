@@ -358,7 +358,7 @@ func (r *userRepository) AddToWishList(pctx context.Context, userId, nftId strin
 
 	result, err := conn.Nft().FindNftsInIds(ctx, req)
 
-	fmt.Println("result: ", result)
+	// fmt.Println("result: ", result)
 	if err != nil {
 		log.Printf("failed to find nfts in ids: %s", err.Error())
 		return nil, errors.New("failed to find nfts in ids")
@@ -381,7 +381,24 @@ func (r *userRepository) AddToWishList(pctx context.Context, userId, nftId strin
 		return nil, errors.New("error: failed to add nft to wish list")
 	}
 
-	fmt.Println("result.Nfts: ", result.Nfts)
+	// fmt.Println("result.Nfts: ", result.Nfts)
+
+	// increment wishlist count in nft database
+	wishListReq := &nftPb.AddNftWishlistReq{
+		NftId: nftId,
+	}
+
+	res, err := conn.Nft().AddNftWishlist(ctx, wishListReq)
+
+	if !res.Success {
+		log.Printf("failed to increment wishlist count: %s", err.Error())
+		return nil, errors.New("failed to increment wishlist count")
+	}
+
+	if err != nil {
+		log.Printf("failed to increment wishlist count: %s", err.Error())
+		return nil, errors.New("failed to increment wishlist count")
+	}
 
 	// return current nft
 

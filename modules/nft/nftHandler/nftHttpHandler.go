@@ -24,6 +24,9 @@ type (
 		BlockOrUnblockNft(c echo.Context) error
 		DeleteNft(c echo.Context) error
 
+		FindTopWishlistNfts(c echo.Context) error
+		FindTopBiddingNfts(c echo.Context) error
+
 		// -------------------- NFT Image -------------------- //
 		UploadToGCP(c echo.Context) error
 		DeleteFromGCP(c echo.Context) error
@@ -46,6 +49,9 @@ type (
 		FindUserBids(c echo.Context) error
 		BidNft(c echo.Context) error
 		WithdrawBid(c echo.Context) error
+
+		// -------------------- NFT Bidding Admin -------------------- //
+		ExecuteBids(c echo.Context) error
 	}
 
 	nftHttpHandler struct {
@@ -175,4 +181,26 @@ func (h *nftHttpHandler) DeleteNft(c echo.Context) error {
 	return response.SuccessResponse(c, http.StatusOK, map[string]any{
 		"message": fmt.Sprintf("nft_id: %s is successfully deleted (Soft Delete)", nftId),
 	})
+}
+
+func (h *nftHttpHandler) FindTopWishlistNfts(c echo.Context) error {
+	ctx := context.Background()
+
+	res, err := h.nftUsecase.FindTopWishlistNfts(ctx)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
+}
+
+func (h *nftHttpHandler) FindTopBiddingNfts(c echo.Context) error {
+	ctx := context.Background()
+
+	res, err := h.nftUsecase.FindTopBiddingNfts(ctx)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
 }

@@ -27,7 +27,12 @@ type (
 		BlockOrUnblockNft(pctx context.Context, nftId string, userId string) (bool, error)
 		DeleteNft(pctx context.Context, nftId string, userId string) (bool, error)
 
+		FindTopWishlistNfts(pctx context.Context) (any, error)
+		FindTopBiddingNfts(pctx context.Context) (any, error)
+
+		// gRPC
 		FindNftsInIds(pctx context.Context, req *nftPb.FindNftsInIdsReq) (*nftPb.FindNftsInIdsRes, error)
+		AddNftWishlist(pctx context.Context, req *nftPb.AddNftWishlistReq) (*nftPb.AddNftWishlistRes, error)
 
 		// -------------------- Category -------------------- //
 		CreateCategory(pctx context.Context, req *nft.NftCategoryReq) (any, error)
@@ -51,6 +56,9 @@ type (
 		FindUserBids(pctx context.Context, userId string) (any, error)
 		BidNft(pctx context.Context, nftId string, userId string, price string) (any, error)
 		WithdrawBid(pctx context.Context, bidId string, userId string) error
+
+		// -------------------- NFT Bidding Admin -------------------- //
+		ExecuteBids(pctx context.Context) (any, error)
 	}
 
 	nftUsecase struct {
@@ -93,6 +101,8 @@ func (u *nftUsecase) CreateNft(pctx context.Context, req *nft.CreateNftReq, user
 		CreatedAt:         utils.LocalTime(),
 		UpdatedAt:         utils.LocalTime(),
 		IsCategoryBlocked: !category.UsageStatus || category.IsDeleted,
+		WishlistCount:     0,
+		BidCount:          0,
 	})
 	if err != nil {
 		return nil, err
@@ -280,6 +290,21 @@ func (u *nftUsecase) DeleteNft(pctx context.Context, nftId string, userId string
 	return false, nil
 }
 
+// gRPC methods
+
+func (u *nftUsecase) AddNftWishlist(pctx context.Context, req *nftPb.AddNftWishlistReq) (*nftPb.AddNftWishlistRes, error) {
+	nftId := strings.TrimPrefix(req.NftId, "nft:")
+
+	// increment wishlist count
+	if err := u.nftRepository.IncrementWishlistCount(pctx, nftId); err != nil {
+		return nil, err
+	}
+
+	return &nftPb.AddNftWishlistRes{
+		Success: true,
+	}, nil
+}
+
 func (u *nftUsecase) FindNftsInIds(pctx context.Context, req *nftPb.FindNftsInIdsReq) (*nftPb.FindNftsInIdsRes, error) {
 
 	filter := bson.D{}
@@ -321,4 +346,32 @@ func (u *nftUsecase) FindNftsInIds(pctx context.Context, req *nftPb.FindNftsInId
 	return &nftPb.FindNftsInIdsRes{
 		Nfts: resultsToRes,
 	}, nil
+}
+
+func (u *nftUsecase) FindTopWishlistNfts(pctx context.Context) (any, error) {
+	filter := bson.D{}
+	filter = append(filter, bson.E{"usage_status", true})
+	filter = append(filter, bson.E{"is_deleted", false})
+	filter = append(filter, bson.E{"is_category_blocked", false})
+
+	results, err := u.nftRepository.FindTopWishlistNfts(pctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (u *nftUsecase) FindTopBiddingNfts(pctx context.Context) (any, error) {
+	filter := bson.D{}
+	filter = append(filter, bson.E{"usage_status", true})
+	filter = append(filter, bson.E{"is_deleted", false})
+	filter = append(filter, bson.E{"is_category_blocked", false})
+
+	results, err := u.nftRepository.FindTopBiddingNfts(pctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

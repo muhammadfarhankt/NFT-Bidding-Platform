@@ -20,7 +20,16 @@ message Nft {
     string imageUrl = 4;
 }
 
+message AddNftWishlistReq {
+    string nftId = 1;
+}
+
+message AddNftWishlistRes {
+    bool success = 1;
+}
+
 // Methods
 service NftGrpcService {
     rpc FindNftsInIds(FindNftsInIdsReq) returns (FindNftsInIdsRes);
+    rpc AddNftWishlist(AddNftWishlistReq) returns (AddNftWishlistRes);
 }

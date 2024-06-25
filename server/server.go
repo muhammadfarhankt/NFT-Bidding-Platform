@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/robfig/cron/v3"
 
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/config"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/middleware/middlewareHandler"
@@ -27,6 +30,7 @@ type (
 		db         *mongo.Client
 		cfg        *config.Config
 		middleware middlewareHandler.MiddlewareHandlerService
+		cron       *cron.Cron
 	}
 )
 
@@ -62,6 +66,7 @@ func Start(pctx context.Context, cfg *config.Config, db *mongo.Client) {
 		db:         db,
 		cfg:        cfg,
 		middleware: newMiddleware(cfg),
+		cron:       cron.New(),
 	}
 
 	jwtAuth.SetApiKey(cfg.Jwt.ApiSecretKey)
@@ -91,6 +96,14 @@ func Start(pctx context.Context, cfg *config.Config, db *mongo.Client) {
 		s.userService()
 	case "nft":
 		s.nftService()
+		// Create a new cron job
+		_, err := s.cron.AddFunc("* * * * *", s.executeCronJob)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Start the cron scheduler
+		s.cron.Start()
 	case "inventory":
 		s.inventoryService()
 	case "payment":
@@ -107,4 +120,34 @@ func Start(pctx context.Context, cfg *config.Config, db *mongo.Client) {
 
 	// Listening
 	s.httpListening()
+}
+
+func (s *server) executeCronJob() {
+	// Your cron job logic here
+	fmt.Println("Executing cron job", time.Now())
+
+	// Make GET request - http://localhost:1324/nft_v1/nft/bidding/execute-bids
+	resp, err := http.Get("http://" + s.cfg.App.Url + "/nft_v1/nft/bidding/execute-bids")
+	if err != nil {
+		log.Println("Error making GET request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Handle the response
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	// Read the response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error reading response body:", err)
+		return
+	}
+	log.Println("Response body:", string(respBody))
+	// Process the response body
+	// ...
+
 }

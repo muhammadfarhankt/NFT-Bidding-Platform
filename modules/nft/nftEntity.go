@@ -22,6 +22,8 @@ type (
 		UpdatedAt         time.Time          `json:"updated_at" bson:"updated_at"`
 		IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 		IsCategoryBlocked bool               `json:"is_category_blocked" bson:"is_category_blocked"`
+		WishlistCount     int                `json:"wishlist_count" bson:"wishlist_count"`
+		BidCount          int                `json:"bid_count" bson:"bid_count"`
 	}
 
 	NftCategory struct {

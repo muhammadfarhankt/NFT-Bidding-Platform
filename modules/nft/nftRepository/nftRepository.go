@@ -26,6 +26,12 @@ type (
 		BlockOrUnblockNft(pctx context.Context, nftId string, isActive bool) error
 		DeleteNft(pctx context.Context, nftId string) error
 
+		FindTopWishlistNfts(pctx context.Context, filter primitive.D) ([]*nft.NftShowCase, error)
+		FindTopBiddingNfts(pctx context.Context, filter primitive.D) ([]*nft.NftShowCase, error)
+
+		// ------------------- NFT gRPC Method ------------------- //
+		IncrementWishlistCount(pctx context.Context, nftId string) error
+
 		// ------------------- Category ------------------- //
 		InsertOneCategory(pctx context.Context, req *nft.NftCategory) (primitive.ObjectID, error)
 		FindOneCategory(pctx context.Context, categoryId string) (*nft.NftCategory, error)
@@ -46,6 +52,9 @@ type (
 		FindUserBids(pctx context.Context, userId string) (any, error)
 		BidNft(pctx context.Context, userId, nftId, price string) (primitive.ObjectID, error)
 		WithdrawBid(pctx context.Context, bidId string) error
+
+		// ------------------- NFT Bidding Admin ------------------- //
+		ExecuteBids(pctx context.Context) (any, error)
 	}
 
 	nftRepository struct {
@@ -59,6 +68,29 @@ func NewNftRepository(db *mongo.Client) NftRepositoryService {
 
 func (r *nftRepository) nftDbConn(pctx context.Context) *mongo.Database {
 	return r.db.Database("nft_db")
+}
+
+// ------------------- NFT gRPC Method ------------------- //
+func (r *nftRepository) IncrementWishlistCount(pctx context.Context, nftId string) error {
+	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+	defer cancel()
+
+	db := r.nftDbConn(ctx)
+	col := db.Collection("nfts")
+
+	result, err := col.UpdateOne(ctx, bson.M{"_id": utils.ConvertToObjectId(nftId)}, bson.M{"$inc": bson.M{"wishlist_count": 1}})
+
+	if result.ModifiedCount == 0 {
+		log.Printf("Error: IncrementWishlistCount failed: %s", err.Error())
+		return errors.New("error: increment wishlist count failed")
+	}
+
+	if err != nil {
+		log.Printf("Error: IncrementWishlistCount failed: %s", err.Error())
+		return errors.New("error: increment wishlist count failed")
+	}
+
+	return nil
 }
 
 func (r *nftRepository) IsUniqueNft(pctx context.Context, title string) bool {
@@ -211,4 +243,87 @@ func (r *nftRepository) DeleteNft(pctx context.Context, nftId string) error {
 	log.Printf("DeleteNft result: %v", result.ModifiedCount)
 
 	return nil
+}
+
+func (r *nftRepository) FindTopWishlistNfts(pctx context.Context, filter primitive.D) ([]*nft.NftShowCase, error) {
+	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+	defer cancel()
+
+	db := r.nftDbConn(ctx)
+	col := db.Collection("nfts")
+
+	// find top 10 wishlist nfts
+	cursor, err := col.Find(ctx, filter, options.Find().SetSort(bson.D{{"wishlist_count", -1}}).SetLimit(10))
+	if err != nil {
+		log.Printf("Error: FindTopWishlistNfts failed: %s", err.Error())
+		return make([]*nft.NftShowCase, 0), errors.New("error: find top wishlist nfts failed")
+	}
+
+	results := make([]*nft.NftShowCase, 0)
+	for cursor.Next(ctx) {
+		result := new(nft.Nft)
+		if err := cursor.Decode(result); err != nil {
+			log.Printf("Error: FindTopWishlistNfts failed: %s", err.Error())
+			return make([]*nft.NftShowCase, 0), errors.New("error: find top wishlist nfts failed")
+		}
+
+		results = append(results, &nft.NftShowCase{
+			NftId:         result.Id.Hex(),
+			Title:         result.Title,
+			Price:         result.Price,
+			Description:   result.Description,
+			AuthorId:      result.AuthorId.Hex(),
+			OwnerId:       result.OwnerId.Hex(),
+			Category:      result.Category.Hex(),
+			ListingType:   result.ListingType,
+			UsageStatus:   result.UsageStatus,
+			ImageUrl:      result.ImageUrl,
+			WishlistCount: result.WishlistCount,
+			BidCount:      result.BidCount,
+		})
+	}
+
+	return results, nil
+
+}
+
+func (r *nftRepository) FindTopBiddingNfts(pctx context.Context, filter primitive.D) ([]*nft.NftShowCase, error) {
+	ctx, cancel := context.WithTimeout(pctx, 10*time.Second)
+	defer cancel()
+
+	db := r.nftDbConn(ctx)
+	col := db.Collection("nfts")
+
+	// find top 10 bidding nfts
+	cursor, err := col.Find(ctx, filter, options.Find().SetSort(bson.D{{"bid_count", -1}}).SetLimit(10))
+	if err != nil {
+		log.Printf("Error: FindTopBiddingNfts failed: %s", err.Error())
+		return make([]*nft.NftShowCase, 0), errors.New("error: find top bidding nfts failed")
+	}
+
+	results := make([]*nft.NftShowCase, 0)
+	for cursor.Next(ctx) {
+		result := new(nft.Nft)
+		if err := cursor.Decode(result); err != nil {
+			log.Printf("Error: FindTopBiddingNfts failed: %s", err.Error())
+			return make([]*nft.NftShowCase, 0), errors.New("error: find top bidding nfts failed")
+		}
+
+		results = append(results, &nft.NftShowCase{
+			NftId:         result.Id.Hex(),
+			Title:         result.Title,
+			Price:         result.Price,
+			Description:   result.Description,
+			AuthorId:      result.AuthorId.Hex(),
+			OwnerId:       result.OwnerId.Hex(),
+			Category:      result.Category.Hex(),
+			ListingType:   result.ListingType,
+			UsageStatus:   result.UsageStatus,
+			ImageUrl:      result.ImageUrl,
+			WishlistCount: result.WishlistCount,
+			BidCount:      result.BidCount,
+		})
+	}
+
+	return results, nil
 }

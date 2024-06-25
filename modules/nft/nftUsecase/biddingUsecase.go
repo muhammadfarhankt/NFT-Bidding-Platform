@@ -175,3 +175,14 @@ func (u *nftUsecase) WithdrawBid(pctx context.Context, bidId string, userId stri
 
 	return nil
 }
+
+// ---------- Bidding NFT Admin Usecase ---------- //
+func (u *nftUsecase) ExecuteBids(pctx context.Context) (any, error) {
+
+	res, err := u.nftRepository.ExecuteBids(pctx)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+
+}

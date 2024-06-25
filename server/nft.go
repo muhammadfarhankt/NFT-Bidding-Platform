@@ -41,13 +41,17 @@ func (s *server) nftService() {
 	//Find many NFTs
 	nft.GET("/nft", httpHandler.FindManyNfts)
 
-	// -------------------------------- Categories -------------------------------- //
-
 	//Find one Category
 	nft.GET("/nft/category/:category_id", httpHandler.FindOneCategory)
 
 	//Find many Categories
 	nft.GET("/nft/category", httpHandler.FindManyCategories)
+
+	// Find Top 10 Wishlist NFTs
+	nft.GET("/nft/top-wishlist", httpHandler.FindTopWishlistNfts)
+
+	// Find Top 10 Bidding NFTs
+	nft.GET("/nft/top-bidding", httpHandler.FindTopBiddingNfts)
 
 	// -------------------------------- NFT Owner End Points -------------------------------- //
 
@@ -70,14 +74,6 @@ func (s *server) nftService() {
 
 	// Delete NFT Image
 	nft.PATCH("/image", httpHandler.DeleteFromGCP, s.middleware.JwtAuthorization)
-
-	// -------------------------------- Categories -------------------------------- //
-
-	//Find one Category
-	nft.GET("/nft/category/:category_id", httpHandler.FindOneCategory)
-
-	//Find many Categories
-	nft.GET("/nft/category", httpHandler.FindManyCategories)
 
 	// -------------------------------- NFT Admin End Points -------------------------------- //
 
@@ -116,4 +112,8 @@ func (s *server) nftService() {
 
 	// user withdraw a bid
 	nft.PATCH("/nft/bidding/:bid_id/withdraw", httpHandler.WithdrawBid, s.middleware.JwtAuthorization)
+
+	// -------------------------------- Bidding Admin End Points -------------------------------- //
+	nft.GET("/nft/bidding/execute-bids", httpHandler.ExecuteBids)
+
 }

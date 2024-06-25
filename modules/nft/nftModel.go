@@ -30,6 +30,8 @@ type (
 		UsageStatus       bool    `json:"usage_status"`
 		IsDeleted         bool    `json:"is_deleted"`
 		IsCategoryBlocked bool    `json:"is_category_blocked"`
+		WishlistCount     int     `json:"wishlist_count"`
+		BidCount          int     `json:"bid_count"`
 	}
 
 	NftSearchReq struct {

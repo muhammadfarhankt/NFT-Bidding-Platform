@@ -199,3 +199,17 @@ func (h *nftHttpHandler) BidNft(c echo.Context) error {
 
 	return response.SuccessResponse(c, http.StatusOK, result)
 }
+
+// ------------------- NFT Bidding Admin ------------------- //
+
+func (h *nftHttpHandler) ExecuteBids(c echo.Context) error {
+
+	ctx := context.Background()
+
+	res, err := h.nftUsecase.ExecuteBids(ctx)
+	if err != nil {
+		return response.ErrResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, res)
+}

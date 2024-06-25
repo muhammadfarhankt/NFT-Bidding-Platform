@@ -12,6 +12,7 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/razorpay/razorpay-go v1.3.2
+	github.com/robfig/cron/v3 v3.0.1
 	go.mongodb.org/mongo-driver v1.14.0
 	golang.org/x/crypto v0.21.0
 	google.golang.org/grpc v1.62.1
