@@ -19,9 +19,10 @@ type (
 	}
 
 	CreateUserReq struct {
-		Email    string `json:"email" form:"email" validate:"required,email,max=255"`
-		Password string `json:"password" form:"password" validate:"required,max=32"`
-		Username string `json:"username" form:"username" validate:"required,max=64"`
+		Email            string `json:"email" form:"email" validate:"required,email,max=255"`
+		Password         string `json:"password" form:"password" validate:"required,max=32"`
+		Username         string `json:"username" form:"username" validate:"required,max=64"`
+		ReferredUserName string `json:"referred_user_name" form:"referred_user_name" validate:"max=64"`
 	}
 
 	CreateUserTransactionReq struct {

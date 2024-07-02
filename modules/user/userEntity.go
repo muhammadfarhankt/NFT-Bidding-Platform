@@ -13,14 +13,15 @@ type (
 		Password     string             `json:"password" bson:"password"`
 		Username     string             `json:"username" bson:"username"`
 		WalletAmount float64            `json:"wallet_amount" bson:"wallet_amount"`
-		OTP          string             `json:"otp" bson:"otp"`
-		OtpExpiredAt time.Time          `json:"otp_expired_at" bson:"otp_expired_at"`
-		CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
-		UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
-		UserRoles    []UserRole         `bson:"user_roles"`
-		IsBlocked    bool               `json:"is_blocked" bson:"is_blocked"`
-		WishList     []string           `json:"wishlist" bson:"wishlist"`
-		Addressess   []AddressModel     `json:"addressess" bson:"addressess"`
+		// OTP          string             `json:"otp" bson:"otp"`
+		// OtpExpiredAt time.Time          `json:"otp_expired_at" bson:"otp_expired_at"`
+		CreatedAt      time.Time          `json:"created_at" bson:"created_at"`
+		UpdatedAt      time.Time          `json:"updated_at" bson:"updated_at"`
+		UserRoles      []UserRole         `bson:"user_roles"`
+		IsBlocked      bool               `json:"is_blocked" bson:"is_blocked"`
+		WishList       []string           `json:"wishlist" bson:"wishlist"`
+		Addressess     []AddressModel     `json:"addressess" bson:"addressess"`
+		ReferredUserId primitive.ObjectID `json:"referred_user_id" bson:"referred_user_id"`
 	}
 
 	UserRole struct {

@@ -104,10 +104,10 @@ func Start(pctx context.Context, cfg *config.Config, db *mongo.Client) {
 
 		// Start the cron scheduler
 		s.cron.Start()
-	case "inventory":
-		s.inventoryService()
-	case "payment":
-		s.paymentService()
+		// case "inventory":
+		// 	s.inventoryService()
+		// case "payment":
+		// 	s.paymentService()
 	}
 
 	// Graceful Shutdown

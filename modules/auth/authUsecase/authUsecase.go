@@ -192,6 +192,17 @@ func (u *authUsecase) RolesCount(pctx context.Context) (*authPb.RolesCountRes, e
 }
 
 func (u *authUsecase) OtpRequest(pctx context.Context, email string, cfg *config.Config) error {
+	// check user exist with email
+	profile, err := u.authRepository.FindOneUserProfile(pctx, cfg.Grpc.UserUrl, &userPb.EmailSearchReq{
+		Email: email,
+	})
+
+	fmt.Println("profile: ", profile)
+
+	if err != nil {
+		return errors.New("error: user not found")
+	}
+
 	otp := utils.GenerateOtp()
 
 	if err := u.authRepository.InsertOneOtp(pctx, email, otp); err != nil {

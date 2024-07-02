@@ -7,7 +7,6 @@ import (
 	"net"
 
 	authPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/auth/authPb"
-	inventoryPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/inventory/inventoryPb"
 	nftPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/nft/nftPb"
 	userPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user/userPb"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/jwtAuth"
@@ -24,7 +23,7 @@ type (
 		Auth() authPb.AuthGrpcServiceClient
 		User() userPb.UserGrpcServiceClient
 		Nft() nftPb.NftGrpcServiceClient
-		Inventory() inventoryPb.InventoryGrpcServiceClient
+		// Inventory() inventoryPb.InventoryGrpcServiceClient
 	}
 
 	grpcClientFactory struct {
@@ -48,9 +47,9 @@ func (g *grpcClientFactory) Nft() nftPb.NftGrpcServiceClient {
 	return nftPb.NewNftGrpcServiceClient(g.client)
 }
 
-func (g *grpcClientFactory) Inventory() inventoryPb.InventoryGrpcServiceClient {
-	return inventoryPb.NewInventoryGrpcServiceClient(g.client)
-}
+// func (g *grpcClientFactory) Inventory() inventoryPb.InventoryGrpcServiceClient {
+// 	return inventoryPb.NewInventoryGrpcServiceClient(g.client)
+// }
 
 func NewGrpcClient(host string) (GrpcClientFactoryHandler, error) {
 	opts := make([]grpc.DialOption, 0)

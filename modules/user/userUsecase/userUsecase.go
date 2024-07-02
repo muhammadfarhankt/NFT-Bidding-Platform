@@ -11,6 +11,7 @@ import (
 	userPb "github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user/userPb"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/modules/user/userRepository"
 	"github.com/muhammadfarhankt/NFT-Bidding-Platform/pkg/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -78,21 +79,65 @@ func (u *userUsecase) InsertUser(pctx context.Context, req *user.CreateUserReq) 
 		return "", errors.New("error: Failed to hash password")
 	}
 
-	// create user
-	userId, err := u.userRepository.InsertUser(pctx, &user.User{
-		Email:     req.Email,
-		Password:  string(hashedPassword),
-		Username:  req.Username,
-		CreatedAt: utils.LocalTime(),
-		UpdatedAt: utils.LocalTime(),
-		UserRoles: []user.UserRole{
-			{
-				RoleTitle: "user",
-				RoleCode:  0,
+	// declare userId
+	userId := primitive.NewObjectID()
+
+	if req.ReferredUserName != "" {
+
+		fmt.Println("if case referred user : ", req.ReferredUserName)
+		profile, err := u.userRepository.FindOneUsername(pctx, req.ReferredUserName)
+		fmt.Println("profile : ", profile)
+		if err != nil {
+			return "", errors.New("error: Failed to find referred user profile")
+		}
+
+		// create user
+		userId, err = u.userRepository.InsertUser(pctx, &user.User{
+			Email:     req.Email,
+			Password:  string(hashedPassword),
+			Username:  req.Username,
+			CreatedAt: utils.LocalTime(),
+			UpdatedAt: utils.LocalTime(),
+			UserRoles: []user.UserRole{
+				{
+					RoleTitle: "user",
+					RoleCode:  0,
+				},
 			},
-		},
-		IsBlocked: false,
-	})
+			IsBlocked:      false,
+			ReferredUserId: profile.Id,
+		})
+
+		if err != nil {
+			return "", errors.New("error: Failed to insert user")
+		}
+
+		// reffered user wallet top up
+		if err := u.userRepository.AddToWalletBalance(pctx, profile.Id.Hex(), 10); err != nil {
+			return "", errors.New("error: Failed to add wallet balance : " + err.Error())
+		}
+	} else {
+		// create user
+		fmt.Println("else case referred user : ", req.ReferredUserName)
+		userId, err = u.userRepository.InsertUser(pctx, &user.User{
+			Email:     req.Email,
+			Password:  string(hashedPassword),
+			Username:  req.Username,
+			CreatedAt: utils.LocalTime(),
+			UpdatedAt: utils.LocalTime(),
+			UserRoles: []user.UserRole{
+				{
+					RoleTitle: "user",
+					RoleCode:  0,
+				},
+			},
+			IsBlocked: false,
+		})
+
+		if err != nil {
+			return "", errors.New("error: Failed to insert user")
+		}
+	}
 
 	if err != nil {
 		return "", errors.New("error: Failed to insert user")

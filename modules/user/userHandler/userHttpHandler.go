@@ -83,7 +83,9 @@ func (h *userHttpHandler) InsertUser(c echo.Context) error {
 		return response.ErrResponse(c, http.StatusInternalServerError, err.Error())
 	}
 
-	return response.SuccessResponse(c, http.StatusCreated, res)
+	profile, err := h.userUsecase.FindOneUserProfile(ctx, res)
+
+	return response.SuccessResponse(c, http.StatusCreated, profile)
 }
 
 func (h *userHttpHandler) FindOneUserProfile(c echo.Context) error {

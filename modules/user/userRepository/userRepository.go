@@ -32,6 +32,7 @@ type (
 		AddToWallet(pctx context.Context, req *user.UserTransaction) error
 		GetUserWalletAccount(pctx context.Context, userId string) (*user.UserWalletAccount, error)
 		UpdateUserTransaction(pctx context.Context, orderId, paymentId string) error
+		AddToWalletBalance(pctx context.Context, userId string, amount float64) error
 
 		// Bidding wallet amount deduction and refund
 		DeductWalletAmount(pctx context.Context, userId string, amount float64) (*user.UserWalletAccount, error)
@@ -40,6 +41,7 @@ type (
 		FindOneEmail(pctx context.Context, email string) (*user.User, error)
 		FindOneUserProfileToRefresh(pctx context.Context, userId string) (*user.User, error)
 		BlockOrUnblockUser(pctx context.Context, userId string, isActive bool) error
+		FindOneUsername(pctx context.Context, username string) (*user.User, error)
 
 		// ----- Wish List -----
 		AddToWishList(pctx context.Context, userId, nftId string) (any, error)
@@ -973,4 +975,34 @@ func (r *userRepository) UserPaymentReport(pctx context.Context, userId, fromDat
 
 func (r *userRepository) SingleOrderPaymentReport(pctx context.Context, orderId string) (any, error) {
 	return nil, nil
+}
+
+func (r *userRepository) AddToWalletBalance(pctx context.Context, userId string, amount float64) error {
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("users")
+
+	if err := col.FindOneAndUpdate(ctx, bson.M{"_id": utils.ConvertToObjectId(userId)}, bson.M{"$inc": bson.M{"wallet_balance": amount}}).Err(); err != nil {
+		log.Printf("Error: AddToWalletBalance: %s", err.Error())
+		return errors.New("error: failed to add to wallet balance")
+	}
+	return nil
+}
+
+func (r *userRepository) FindOneUsername(pctx context.Context, username string) (*user.User, error) {
+	ctx, cancel := context.WithTimeout(pctx, 5*time.Second)
+	defer cancel()
+
+	db := r.userDbConn(ctx)
+	col := db.Collection("users")
+
+	var user *user.User
+	if err := col.FindOne(ctx, bson.M{"username": username}).Decode(&user); err != nil {
+		log.Printf("Error: FindOneUsername: %s", err.Error())
+		return nil, errors.New("error: user not found")
+	}
+
+	return user, nil
 }
