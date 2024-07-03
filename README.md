@@ -81,3 +81,40 @@ protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     modules/user/userPb/userPb.proto
 ```
+
+## Google Cloud Setup for Image Uploading
+
+### Prerequisites
+
+- Google Cloud Platform account
+- Python 3.8 to 3.12 (for GCP CLI installation)
+- Go environment
+
+### Step 1: Create a GCP Account
+
+Ensure you have an account on Google Cloud Platform. If not, sign up at [Google Cloud](https://cloud.google.com/).
+
+### Step 2: Create a New GCP Project
+
+1. After logging in, navigate to your GCP Dashboard.
+2. Click **New Project** and follow the prompts to create your project.
+
+### Step 3: Create a Storage Bucket
+
+1. Go to the **Cloud Storage** section in your GCP Console.
+2. Click **Create bucket** and follow the steps:
+   - **Name your bucket**: Follow GCP naming conventions.
+   - **Choose where to store your data**: Select Mumbai for the location.
+   - **Configure your storage class and access control**: Use Fine-grained for access control.
+   - **Set public access prevention**: Initially set to Enforced.
+
+### Step 4: Configure Bucket for Public Access
+
+Later, you can modify the bucket settings to allow public access to specific objects as needed.
+
+### Step 5: Install GCP CLI
+
+Check your Python version:
+
+```bash
+python3 -V
